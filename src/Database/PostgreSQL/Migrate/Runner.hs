@@ -20,13 +20,13 @@ ensureTableUI conn = do
 
 downMigrateUI :: Connection -> BiMigration -> IO ()
 downMigrateUI conn m = do
-  putStr $ "Migrating down from '" ++ (biMigrationName m) ++ "' ... "
+  putStr $ "Migrating down from '" ++ biMigrationName m ++ "' ... "
   downMigrate conn m
   tick
 
 upMigrateUI :: Connection -> Migration -> IO ()
 upMigrateUI conn m = do
-  putStr $ "Migrating up to '" ++ (migrationName m) ++ "' ... "
+  putStr $ "Migrating up to '" ++ migrationName m ++ "' ... "
   upMigrate conn m
   tick
 
@@ -34,9 +34,9 @@ runPlan :: Connection -> Plan -> IO ()
 runPlan conn plan = case plan of
   AbortivePlan downs failed -> do
     putError "The following down-migrations are not provided:"
-    mapM_ putStrLn (map upMigrationName failed)
+    mapM_ (putStrLn . upMigrationName)  failed
     putStrLn "The following down-migrations can be performed:"
-    mapM_ putStrLn (map biMigrationName downs)
+    mapM_ (putStrLn . biMigrationName)  downs
     putStrLn "Would you like to do this? [Y/n]"
     ans <- getLine
     when (ans == "Y") $ do
@@ -46,7 +46,7 @@ runPlan conn plan = case plan of
   Plan downs ups -> do
     mapM_ (downMigrateUI conn) downs
     mapM_ (upMigrateUI conn) ups
-    putSuccess $ "Done (" ++ (show $ length ups + length downs) ++ " actions performed)."
+    putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
 
 runMigrations :: Connection -> [Migration] -> IO ()
 runMigrations conn migs = do

@@ -23,14 +23,14 @@ instance FromRow DbInt where
 
 ensureTable :: Connection -> IO Bool
 ensureTable conn = do
-  [(DbInt count)] <- query_ conn
+  [DbInt count] <- query_ conn
     [sql|
       select count(*)
       from pg_tables t
       where t.schemaname = 'public'
         and t.tablename  = '_migration'
     |]
-  when (count == 0) $ void $ do
+  when (count == 0) $ void $
     execute_ conn
       [sql|
         create table _migration

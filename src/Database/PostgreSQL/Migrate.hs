@@ -1,9 +1,5 @@
-module Database.PostgreSQL.Migrate
-  ( module Database.PostgreSQL.Migrate.Data
-  , module Database.PostgreSQL.Migrate.Runner
-  , module Database.PostgreSQL.Migrate.Shortcuts.PostgreSQL
-  ) where
+module Database.PostgreSQL.Migrate (module X) where
 
-import Database.PostgreSQL.Migrate.Data (Migration (..))
-import Database.PostgreSQL.Migrate.Runner (runMigrations)
-import Database.PostgreSQL.Migrate.Shortcuts.PostgreSQL (addColumn)
+import Database.PostgreSQL.Migrate.Data as X (Migration(..))
+import Database.PostgreSQL.Migrate.Runner as X (runMigrations)
+import Database.PostgreSQL.Migrate.Shortcuts.PostgreSQL as X (addColumn)

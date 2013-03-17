@@ -20,16 +20,16 @@ stripPrefix _ as bs = (as, bs)
 
 collectUps :: [Migration] -> [UpMigration]
 collectUps [] = []
-collectUps ((Migration n u d):ms) = case d of
-  Nothing -> (UpMigration n u):(collectUps ms)
-  Just _  ->                    collectUps ms
+collectUps (Migration n u d : ms) = case d of
+  Nothing -> UpMigration n u : collectUps ms
+  Just _  ->                   collectUps ms
 
 tryMigrateDown :: [Migration] -> ([BiMigration], [UpMigration])
 tryMigrateDown [] = ([], [])
-tryMigrateDown ((Migration n u md):ms) = case md of
-  Nothing  ->  ([], (UpMigration n u):(collectUps ms))
+tryMigrateDown (Migration n u md : ms) = case md of
+  Nothing  ->  ([], UpMigration n u : collectUps ms)
   Just d   ->  let (bis, ups) = tryMigrateDown ms
-              in ((BiMigration n u d):bis, ups)
+              in (BiMigration n u d : bis, ups)
 
 planMigration :: [Migration] -> [Migration] -> Plan
 planMigration old new =
