@@ -1,4 +1,7 @@
-module Color (withColor, Color(..), putSuccess, putError) where
+module Database.PostgreSQL.Migrate.Terminal
+  ( putSuccess
+  , putError
+  ) where
 
 import System.Console.ANSI (setSGR, SGR(SetColor), ConsoleLayer(Foreground), ColorIntensity(Dull), Color(..))
 

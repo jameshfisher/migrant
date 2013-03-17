@@ -1,5 +1,5 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings #-}
-module PostgresApi
+module Database.PostgreSQL.Migrate.Api.PostgreSQL
   ( ensureTable
   , getMigrations
   , upMigrate
@@ -14,7 +14,7 @@ import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.SqlQQ
 import Data.String (IsString(fromString))
 
-import Data
+import Database.PostgreSQL.Migrate.Data
 
 
 data DbInt = DbInt Int

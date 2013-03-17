@@ -1,4 +1,8 @@
-module Data where
+module Database.PostgreSQL.Migrate.Data
+  ( Migration (..)
+  , UpMigration (..)
+  , BiMigration (..)
+  ) where
 
 data Migration = Migration
   { migrationName :: String

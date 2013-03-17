@@ -1,0 +1,25 @@
+name: postgres-migrate
+version: 0.0.1
+synopsis: Database migration for PostgreSQL
+description: Database migration for PostgreSQL
+license: LGPL-3
+license-file: LICENSE.txt
+author: James Harrison Fisher <jameshfisher@gmail.com>
+maintainer: James Harrison Fisher <jameshfisher@gmail.com>
+copyright: (c) 2013 James Harrison Fisher <jameshfisher@gmail.com>
+category: Database
+build-type: Simple
+cabal-version: >= 1.6
+
+source-repository head
+  type: git
+  location: https://bitbucket.org/eegg/postgres-migrate
+
+library
+  hs-source-dirs: src
+  build-depends:
+    base,
+    postgresql-simple,
+    ansi-terminal
+  exposed-modules: Database.PostgreSQL.Migrate
+  ghc-options: -Wall

@@ -1,9 +1,8 @@
-module Main where
+module Database.PostgreSQL.Migrate.Main where
 
 import Database.PostgreSQL.Simple
 
-import Data
-import UI
+import Database.PostgreSQL.Migrate
 
 main :: IO ()
 main = do

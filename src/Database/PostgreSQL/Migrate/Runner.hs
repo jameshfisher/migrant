@@ -1,12 +1,14 @@
-module UI where
+module Database.PostgreSQL.Migrate.Runner
+  ( runMigrations
+  ) where
 
 import Control.Monad
 import Database.PostgreSQL.Simple
 
-import Data
-import PlanMigration
-import Color
-import PostgresApi
+import Database.PostgreSQL.Migrate.Data
+import Database.PostgreSQL.Migrate.PlanMigration
+import Database.PostgreSQL.Migrate.Terminal
+import Database.PostgreSQL.Migrate.Api.PostgreSQL
 
 tick :: IO ()
 tick = putSuccess "✔"

@@ -1,8 +1,15 @@
-module PlanMigration (Plan (..), planMigration) where
+module Database.PostgreSQL.Migrate.PlanMigration
+  ( Plan (..)
+  , planMigration
+  ) where
 
 import Data.Function
 
-import Data
+import Database.PostgreSQL.Migrate.Data
+
+data Plan
+  = AbortivePlan [BiMigration] [UpMigration]
+  | Plan [BiMigration] [Migration]
 
 stripPrefix :: (a -> a -> Bool) -> [a] -> [a] -> ([a], [a])
 stripPrefix eq (a:as) (b:bs) =
@@ -24,14 +31,10 @@ tryMigrateDown ((Migration n u md):ms) = case md of
   Just d   ->  let (bis, ups) = tryMigrateDown ms
               in ((BiMigration n u d):bis, ups)
 
-data Plan
-  = AbortivePlan [BiMigration] [UpMigration]
-  | Plan [BiMigration] [Migration]
-
 planMigration :: [Migration] -> [Migration] -> Plan
 planMigration old new =
   let
-    (toReverse, toPlay) = stripPrefix (on (==) migrationUp) old new
+    (toReverse, toPlay) = stripPrefix ((==) `on` migrationUp) old new
     (bis, ups) = tryMigrateDown (reverse toReverse)
   in case ups of 
     [] -> Plan bis toPlay
