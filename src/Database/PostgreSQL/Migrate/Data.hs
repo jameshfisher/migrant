@@ -2,7 +2,10 @@ module Database.PostgreSQL.Migrate.Data
   ( Migration (..)
   , UpMigration (..)
   , BiMigration (..)
+  , MigrateSettings (..)
   ) where
+
+import Database.PostgreSQL.Simple (Connection)
 
 data Migration = Migration
   { migrationName :: String
@@ -20,3 +23,7 @@ data BiMigration = BiMigration
   , biMigrationUp   :: String
   , biMigrationDown :: String
   } deriving (Show)
+
+data MigrateSettings = MigrateSettings
+  { migrateSettingsConnection :: Connection
+  }

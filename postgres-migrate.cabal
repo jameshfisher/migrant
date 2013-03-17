@@ -20,7 +20,8 @@ library
   build-depends:
     base,
     postgresql-simple,
-    ansi-terminal
+    ansi-terminal,
+    mtl
   exposed-modules:
     Database.PostgreSQL.Migrate,
     Database.PostgreSQL.Migrate.Shortcuts.PostgreSQL

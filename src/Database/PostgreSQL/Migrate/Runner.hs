@@ -2,8 +2,9 @@ module Database.PostgreSQL.Migrate.Runner
   ( runMigrations
   ) where
 
+import Control.Applicative ((<$>))
 import Control.Monad
-import Database.PostgreSQL.Simple
+import Control.Monad.Reader
 
 import Database.PostgreSQL.Migrate.Data
 import Database.PostgreSQL.Migrate.PlanMigration
@@ -13,43 +14,58 @@ import Database.PostgreSQL.Migrate.Api.PostgreSQL
 tick :: IO ()
 tick = putSuccess "✔"
 
-ensureTableUI :: Connection -> IO ()
-ensureTableUI conn = do
-  created <- ensureTable conn
-  when created tick
+type Runner = ReaderT MigrateSettings IO
 
-downMigrateUI :: Connection -> BiMigration -> IO ()
-downMigrateUI conn m = do
-  putStr $ "Migrating down from '" ++ biMigrationName m ++ "' ... "
-  downMigrate conn m
-  tick
+ensureTableUI :: Runner ()
+ensureTableUI = do
+  conn <- migrateSettingsConnection <$> ask
+  exists <- liftIO $ stackExists conn
+  when (not exists) $ liftIO $ do
+    putStr $ "Creating migration stack ... "
+    createStack conn
+    tick
 
-upMigrateUI :: Connection -> Migration -> IO ()
-upMigrateUI conn m = do
-  putStr $ "Migrating up to '" ++ migrationName m ++ "' ... "
-  upMigrate conn m
-  tick
+downMigrateUI :: BiMigration -> Runner ()
+downMigrateUI m = do
+  conn <- migrateSettingsConnection <$> ask
+  liftIO $ do
+    putStr $ "Migrating down from '" ++ biMigrationName m ++ "' ... "
+    downMigrate conn m
+    tick
 
-runPlan :: Connection -> Plan -> IO ()
-runPlan conn plan = case plan of
+upMigrateUI :: Migration -> Runner ()
+upMigrateUI m = do
+  conn <- migrateSettingsConnection <$> ask
+  liftIO $ do
+    putStr $ "Migrating up to '" ++ migrationName m ++ "' ... "
+    upMigrate conn m
+    tick
+
+runPlan :: Plan -> Runner ()
+runPlan plan = case plan of
   AbortivePlan downs failed -> do
-    putError "The following down-migrations are not provided:"
-    mapM_ (putStrLn . upMigrationName)  failed
-    putStrLn "The following down-migrations can be performed:"
-    mapM_ (putStrLn . biMigrationName)  downs
-    putStrLn "Would you like to do this? [Y/n]"
-    ans <- getLine
+    ans <- liftIO $ do
+      putError "The following down-migrations are not provided:"
+      mapM_ (putStrLn . upMigrationName)  failed
+      putStrLn "The following down-migrations can be performed:"
+      mapM_ (putStrLn . biMigrationName)  downs
+      putStrLn "Would you like to do this? [Y/n]"
+      getLine
     when (ans == "Y") $ do
-      putStrLn "Down-migrating."
-      mapM_ (downMigrateUI conn) downs
+      liftIO $ putStrLn "Down-migrating."
+      mapM_ downMigrateUI downs
 
   Plan downs ups -> do
-    mapM_ (downMigrateUI conn) downs
-    mapM_ (upMigrateUI conn) ups
-    putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
+    mapM_ downMigrateUI downs
+    mapM_ upMigrateUI ups
+    liftIO $ putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
 
-runMigrations :: Connection -> [Migration] -> IO ()
-runMigrations conn migs = do
-  ensureTableUI conn
-  olds <- getMigrations conn
-  runPlan conn (planMigration olds migs)
+runMigrations' :: [Migration] -> Runner ()
+runMigrations' migs = do
+  conn <- migrateSettingsConnection <$> ask
+  ensureTableUI
+  olds <- liftIO $ getMigrations conn
+  runPlan $ planMigration olds migs
+
+runMigrations :: MigrateSettings -> [Migration] -> IO ()
+runMigrations settings migs = runReaderT (runMigrations' migs) settings
