@@ -1,4 +1,3 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, FlexibleInstances #-}
 module Database.PostgreSQL.Migrate.Api.PostgreSQL
   ( stackExists
   , createStack
@@ -17,7 +16,7 @@ import Data.String (IsString(fromString))
 
 import Database.PostgreSQL.Migrate.Data
 
-instance Backend Connection where
+instance Backend Connection String where
   backendStackExists = stackExists
   backendCreateStack = createStack
   backendGetMigrations = getMigrations

@@ -32,3 +32,10 @@ library
     Database.PostgreSQL.Migrate.PlanMigration
     Database.PostgreSQL.Migrate.Runner
   ghc-options: -Wall
+  extensions:
+    QuasiQuotes,
+    OverloadedStrings,
+    MultiParamTypeClasses,
+    FunctionalDependencies,
+    TypeSynonymInstances,
+    FlexibleInstances

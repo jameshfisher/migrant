@@ -14,17 +14,17 @@ import Database.PostgreSQL.Migrate.Terminal
 tick :: IO ()
 tick = putSuccess "✔"
 
-type Runner b = ReaderT (MigrateSettings b) IO
+type Runner b q = ReaderT (MigrateSettings b q) IO
 
-whenInteractive :: Backend b => Runner b () -> Runner b ()
+whenInteractive :: Backend b q => Runner b q () -> Runner b q ()
 whenInteractive a = do
   interactive <- migrateSettingsInteractive <$> ask
   when interactive a
 
-interactiveIO :: Backend b => IO () -> Runner b ()
+interactiveIO :: Backend b q => IO () -> Runner b q ()
 interactiveIO = whenInteractive . liftIO
 
-ensureTableUI :: Backend b => Runner b ()
+ensureTableUI :: Backend b q => Runner b q ()
 ensureTableUI = do
   bk <- migrateSettingsBackend <$> ask
   exists <- liftIO $ backendStackExists bk
@@ -33,21 +33,21 @@ ensureTableUI = do
     liftIO $ backendCreateStack bk
     interactiveIO tick
 
-downMigrateUI :: Backend b => BiMigration String -> Runner b ()
+downMigrateUI :: Backend b q => BiMigration q -> Runner b q ()
 downMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   interactiveIO $ putStr $ "Migrating down from '" ++ biMigrationName m ++ "' ... "
   liftIO $ backendDownMigrate bk m
   interactiveIO tick
 
-upMigrateUI :: Backend b => Migration String -> Runner b ()
+upMigrateUI :: Backend b q => Migration q -> Runner b q ()
 upMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   interactiveIO $ putStr $ "Migrating up to '" ++ migrationName m ++ "' ... "
   liftIO $ backendUpMigrate bk m
   interactiveIO tick
 
-runPlan :: Backend b => Plan -> Runner b ()
+runPlan :: Backend b q => Plan q -> Runner b q ()
 runPlan plan = case plan of
   AbortivePlan downs failed -> do
     interactive <- migrateSettingsInteractive <$> ask
@@ -71,12 +71,12 @@ runPlan plan = case plan of
     mapM_ upMigrateUI ups
     interactiveIO $ putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
 
-runMigrations' :: Backend b => [Migration String] -> Runner b ()
+runMigrations' :: Backend b q => [Migration q] -> Runner b q ()
 runMigrations' migs = do
   bk <- migrateSettingsBackend <$> ask
   ensureTableUI
   olds <- liftIO $ backendGetMigrations bk
   runPlan $ planMigration olds migs
 
-runMigrations :: Backend b => MigrateSettings b -> [Migration String] -> IO ()
+runMigrations :: Backend b q => MigrateSettings b q -> [Migration q] -> IO ()
 runMigrations settings migs = runReaderT (runMigrations' migs) settings

@@ -23,14 +23,14 @@ data BiMigration q = BiMigration
   , biMigrationDown :: q
   } deriving (Show)
 
-class Backend b where
+class Eq q => Backend b q | b -> q where
   backendStackExists   :: b -> IO Bool
   backendCreateStack   :: b -> IO ()
-  backendGetMigrations :: b -> IO [Migration String]
-  backendDownMigrate   :: b -> BiMigration String -> IO ()
-  backendUpMigrate     :: b -> Migration String -> IO ()
+  backendGetMigrations :: b -> IO [Migration q]
+  backendDownMigrate   :: b -> BiMigration q -> IO ()
+  backendUpMigrate     :: b -> Migration q -> IO ()
 
-data Backend b => MigrateSettings b = MigrateSettings
+data Backend b q => MigrateSettings b q = MigrateSettings
   { migrateSettingsBackend     :: b
   , migrateSettingsInteractive :: Bool
   }
