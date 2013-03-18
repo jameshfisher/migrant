@@ -28,7 +28,7 @@ ensureTableUI :: Backend b => Runner b ()
 ensureTableUI = do
   bk <- migrateSettingsBackend <$> ask
   exists <- liftIO $ backendStackExists bk
-  when (not exists) $ do
+  unless exists $ do
     interactiveIO $ putStr "Creating migration stack ... "
     liftIO $ backendCreateStack bk
     interactiveIO tick
@@ -64,7 +64,7 @@ runPlan plan = case plan of
           liftIO $ putStrLn "Down-migrating."
           mapM_ downMigrateUI downs
       else 
-        error $ "The following down-migrations are not provided: " ++ concat (intersperse ", " $ map upMigrationName failed)
+        error $ "The following down-migrations are not provided: " ++ intercalate ", " (map upMigrationName failed)
 
   Plan downs ups -> do
     mapM_ downMigrateUI downs

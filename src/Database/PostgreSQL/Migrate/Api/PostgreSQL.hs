@@ -41,31 +41,30 @@ stackExists conn = do
   return $ count == 1
 
 createStack :: Connection -> IO ()
-createStack conn = do
-  void $ execute_ conn
-    [sql|
-      create table _migration
-        ( id
-            integer
-            constraint _migration_id_pkey primary key
-            constraint _migration_id_positive check (0 < id)
-        , parent
-            integer
-            constraint _migration_parent_fkey references _migration(id)
-            constraint _migration_id_sequence check
-              ( (id = 1 and parent is null)
-                or id = parent+1 )
-        , name
-            text
-            constraint _migration_name_not_null not null
-            constraint _migration_name_unique unique
-        , up
-            text
-            constraint _migration_up_not_null not null
-        , down
-            text
-        );
-    |]
+createStack conn = void $ execute_ conn
+  [sql|
+    create table _migration
+      ( id
+          integer
+          constraint _migration_id_pkey primary key
+          constraint _migration_id_positive check (0 < id)
+      , parent
+          integer
+          constraint _migration_parent_fkey references _migration(id)
+          constraint _migration_id_sequence check
+            ( (id = 1 and parent is null)
+              or id = parent+1 )
+      , name
+          text
+          constraint _migration_name_not_null not null
+          constraint _migration_name_unique unique
+      , up
+          text
+          constraint _migration_up_not_null not null
+      , down
+          text
+      );
+  |]
 
 instance FromRow Migration where
   fromRow = Migration <$> field <*> field <*> field
