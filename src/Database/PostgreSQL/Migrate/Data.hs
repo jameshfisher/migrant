@@ -6,29 +6,29 @@ module Database.PostgreSQL.Migrate.Data
   , MigrateSettings (..)
   ) where
 
-data Migration = Migration
+data Migration q = Migration
   { migrationName :: String
-  , migrationUp   :: String
-  , migrationDown :: Maybe String
+  , migrationUp   :: q
+  , migrationDown :: Maybe q
   } deriving (Show)
 
-data UpMigration = UpMigration
+data UpMigration q = UpMigration
   { upMigrationName :: String
-  , upMigrationUp   :: String
+  , upMigrationUp   :: q
   } deriving (Show)
 
-data BiMigration = BiMigration
+data BiMigration q = BiMigration
   { biMigrationName :: String
-  , biMigrationUp   :: String
-  , biMigrationDown :: String
+  , biMigrationUp   :: q
+  , biMigrationDown :: q
   } deriving (Show)
 
 class Backend b where
   backendStackExists   :: b -> IO Bool
   backendCreateStack   :: b -> IO ()
-  backendGetMigrations :: b -> IO [Migration]
-  backendDownMigrate   :: b -> BiMigration -> IO ()
-  backendUpMigrate     :: b -> Migration -> IO ()
+  backendGetMigrations :: b -> IO [Migration String]
+  backendDownMigrate   :: b -> BiMigration String -> IO ()
+  backendUpMigrate     :: b -> Migration String -> IO ()
 
 data Backend b => MigrateSettings b = MigrateSettings
   { migrateSettingsBackend     :: b

@@ -33,14 +33,14 @@ ensureTableUI = do
     liftIO $ backendCreateStack bk
     interactiveIO tick
 
-downMigrateUI :: Backend b => BiMigration -> Runner b ()
+downMigrateUI :: Backend b => BiMigration String -> Runner b ()
 downMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   interactiveIO $ putStr $ "Migrating down from '" ++ biMigrationName m ++ "' ... "
   liftIO $ backendDownMigrate bk m
   interactiveIO tick
 
-upMigrateUI :: Backend b => Migration -> Runner b ()
+upMigrateUI :: Backend b => Migration String -> Runner b ()
 upMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   interactiveIO $ putStr $ "Migrating up to '" ++ migrationName m ++ "' ... "
@@ -71,12 +71,12 @@ runPlan plan = case plan of
     mapM_ upMigrateUI ups
     interactiveIO $ putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
 
-runMigrations' :: Backend b => [Migration] -> Runner b ()
+runMigrations' :: Backend b => [Migration String] -> Runner b ()
 runMigrations' migs = do
   bk <- migrateSettingsBackend <$> ask
   ensureTableUI
   olds <- liftIO $ backendGetMigrations bk
   runPlan $ planMigration olds migs
 
-runMigrations :: Backend b => MigrateSettings b -> [Migration] -> IO ()
+runMigrations :: Backend b => MigrateSettings b -> [Migration String] -> IO ()
 runMigrations settings migs = runReaderT (runMigrations' migs) settings

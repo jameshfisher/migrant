@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, FlexibleInstances #-}
 module Database.PostgreSQL.Migrate.Api.PostgreSQL
   ( stackExists
   , createStack
@@ -66,10 +66,10 @@ createStack conn = void $ execute_ conn
       );
   |]
 
-instance FromRow Migration where
+instance FromRow (Migration String) where
   fromRow = Migration <$> field <*> field <*> field
 
-getMigrations :: Connection -> IO [Migration]
+getMigrations :: Connection -> IO [Migration String]
 getMigrations conn = query_ conn
   [sql|
     select name, up, down
@@ -77,7 +77,7 @@ getMigrations conn = query_ conn
     order by id asc
   |]
 
-downMigrate :: Connection -> BiMigration -> IO ()
+downMigrate :: Connection -> BiMigration String -> IO ()
 downMigrate conn mig = withTransaction conn $ do
   _ <- execute_ conn (Query $ fromString $ biMigrationDown mig)
   _ <- execute conn
@@ -87,7 +87,7 @@ downMigrate conn mig = withTransaction conn $ do
     |] (Only $ biMigrationName mig)
   return ()
 
-upMigrate :: Connection -> Migration -> IO ()
+upMigrate :: Connection -> Migration String -> IO ()
 upMigrate conn mig = withTransaction conn $ do
   _ <- execute_ conn (Query $ fromString $ migrationUp mig)
   _ <- execute conn
