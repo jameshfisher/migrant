@@ -3,12 +3,13 @@ module Database.PostgreSQL.Migrate.PlanMigration
   , planMigration
   ) where
 
+import Data.Maybe
 import Data.Function
 
 import Database.PostgreSQL.Migrate.Data
 
 data Plan q
-  = AbortivePlan [BiMigration q] [UpMigration q]
+  = AbortivePlan [BiMigration q] [Migration q]
   | Plan [BiMigration q] [Migration q]
 
 stripPrefix :: (a -> a -> Bool) -> [a] -> [a] -> ([a], [a])
@@ -18,16 +19,13 @@ stripPrefix eq (a:as) (b:bs) =
   else (a:as, b:bs)
 stripPrefix _ as bs = (as, bs)
 
-collectUps :: Eq q => [Migration q] -> [UpMigration q]
-collectUps [] = []
-collectUps (Migration n u d : ms) = case d of
-  Nothing -> UpMigration n u : collectUps ms
-  Just _  ->                   collectUps ms
+collectUps :: Eq q => [Migration q] -> [Migration q]
+collectUps = filter (isNothing . migrationDown)
 
-tryMigrateDown :: Eq q => [Migration q] -> ([BiMigration q], [UpMigration q])
+tryMigrateDown :: Eq q => [Migration q] -> ([BiMigration q], [Migration q])
 tryMigrateDown [] = ([], [])
 tryMigrateDown (Migration n u md : ms) = case md of
-  Nothing  ->  ([], UpMigration n u : collectUps ms)
+  Nothing  ->  ([], Migration n u md : collectUps ms)
   Just d   ->  let (bis, ups) = tryMigrateDown ms
               in (BiMigration n u d : bis, ups)
 

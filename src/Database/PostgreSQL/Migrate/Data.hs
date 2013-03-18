@@ -1,6 +1,5 @@
 module Database.PostgreSQL.Migrate.Data
   ( Migration (..)
-  , UpMigration (..)
   , BiMigration (..)
   , Backend (..)
   , MigrateSettings (..)
@@ -10,11 +9,6 @@ data Migration q = Migration
   { migrationName :: String
   , migrationUp   :: q
   , migrationDown :: Maybe q
-  } deriving (Show)
-
-data UpMigration q = UpMigration
-  { upMigrationName :: String
-  , upMigrationUp   :: q
   } deriving (Show)
 
 data BiMigration q = BiMigration

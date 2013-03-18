@@ -55,7 +55,7 @@ runPlan plan = case plan of
       then do
         ans <- liftIO $ do
           putError "The following down-migrations are not provided:"
-          mapM_ (putStrLn . upMigrationName)  failed
+          mapM_ (putStrLn . migrationName)  failed
           putStrLn "The following down-migrations can be performed:"
           mapM_ (putStrLn . biMigrationName)  downs
           putStrLn "Would you like to do this? [Y/n]"
@@ -64,7 +64,7 @@ runPlan plan = case plan of
           liftIO $ putStrLn "Down-migrating."
           mapM_ downMigrateUI downs
       else 
-        error $ "The following down-migrations are not provided: " ++ intercalate ", " (map upMigrationName failed)
+        error $ "The following down-migrations are not provided: " ++ intercalate ", " (map migrationName failed)
 
   Plan downs ups -> do
     mapM_ downMigrateUI downs
