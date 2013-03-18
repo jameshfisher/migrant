@@ -2,6 +2,7 @@ module Database.PostgreSQL.Migrate.Runner
   ( runMigrations
   ) where
 
+import Data.List
 import Control.Applicative ((<$>))
 import Control.Monad
 import Control.Monad.Reader
@@ -63,7 +64,7 @@ runPlan plan = case plan of
           liftIO $ putStrLn "Down-migrating."
           mapM_ downMigrateUI downs
       else 
-        error $ "The following down-migrations are not provided:" ++ concatMap upMigrationName failed
+        error $ "The following down-migrations are not provided: " ++ concat (intersperse ", " $ map upMigrationName failed)
 
   Plan downs ups -> do
     mapM_ downMigrateUI downs
