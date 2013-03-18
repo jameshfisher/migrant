@@ -15,7 +15,12 @@ main = do
     , connectDatabase = "migrate"
     }
   
-  runMigrations (MigrateSettings conn)
+  let settings = MigrateSettings {
+    migrateSettingsBackend = conn,
+    migrateSettingsInteractive = True
+    }
+
+  runMigrations settings
     [ Migration "first"   "create table foo (bar integer)"   (Just "drop table foo")
     , Migration "another" "insert into foo (bar) values (1)" (Just "delete from foo where bar=1")
     ]

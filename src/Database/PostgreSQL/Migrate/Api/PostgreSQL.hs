@@ -17,6 +17,13 @@ import Data.String (IsString(fromString))
 
 import Database.PostgreSQL.Migrate.Data
 
+instance Backend Connection where
+  backendStackExists = stackExists
+  backendCreateStack = createStack
+  backendGetMigrations = getMigrations
+  backendDownMigrate = downMigrate
+  backendUpMigrate = upMigrate
+
 
 data DbInt = DbInt Int
 instance FromRow DbInt where

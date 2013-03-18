@@ -2,10 +2,9 @@ module Database.PostgreSQL.Migrate.Data
   ( Migration (..)
   , UpMigration (..)
   , BiMigration (..)
+  , Backend (..)
   , MigrateSettings (..)
   ) where
-
-import Database.PostgreSQL.Simple (Connection)
 
 data Migration = Migration
   { migrationName :: String
@@ -24,6 +23,14 @@ data BiMigration = BiMigration
   , biMigrationDown :: String
   } deriving (Show)
 
-data MigrateSettings = MigrateSettings
-  { migrateSettingsConnection :: Connection
+class Backend b where
+  backendStackExists   :: b -> IO Bool
+  backendCreateStack   :: b -> IO ()
+  backendGetMigrations :: b -> IO [Migration]
+  backendDownMigrate   :: b -> BiMigration -> IO ()
+  backendUpMigrate     :: b -> Migration -> IO ()
+
+data Backend b => MigrateSettings b = MigrateSettings
+  { migrateSettingsBackend     :: b
+  , migrateSettingsInteractive :: Bool
   }

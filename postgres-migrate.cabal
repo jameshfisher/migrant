@@ -24,11 +24,11 @@ library
     mtl
   exposed-modules:
     Database.PostgreSQL.Migrate,
+    Database.PostgreSQL.Migrate.Api.PostgreSQL,
     Database.PostgreSQL.Migrate.Shortcuts.PostgreSQL
   other-modules:
     Database.PostgreSQL.Migrate.Terminal
     Database.PostgreSQL.Migrate.Data
     Database.PostgreSQL.Migrate.PlanMigration
     Database.PostgreSQL.Migrate.Runner
-    Database.PostgreSQL.Migrate.Api.PostgreSQL
   ghc-options: -Wall

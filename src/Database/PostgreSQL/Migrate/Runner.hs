@@ -9,63 +9,73 @@ import Control.Monad.Reader
 import Database.PostgreSQL.Migrate.Data
 import Database.PostgreSQL.Migrate.PlanMigration
 import Database.PostgreSQL.Migrate.Terminal
-import Database.PostgreSQL.Migrate.Api.PostgreSQL
 
 tick :: IO ()
 tick = putSuccess "✔"
 
-type Runner = ReaderT MigrateSettings IO
+type Runner b = ReaderT (MigrateSettings b) IO
 
-ensureTableUI :: Runner ()
+whenInteractive :: Backend b => Runner b () -> Runner b ()
+whenInteractive a = do
+  interactive <- migrateSettingsInteractive <$> ask
+  when interactive a
+
+interactiveIO :: Backend b => IO () -> Runner b ()
+interactiveIO = whenInteractive . liftIO
+
+ensureTableUI :: Backend b => Runner b ()
 ensureTableUI = do
-  conn <- migrateSettingsConnection <$> ask
-  exists <- liftIO $ stackExists conn
-  when (not exists) $ liftIO $ do
-    putStr $ "Creating migration stack ... "
-    createStack conn
-    tick
+  bk <- migrateSettingsBackend <$> ask
+  exists <- liftIO $ backendStackExists bk
+  when (not exists) $ do
+    interactiveIO $ putStr "Creating migration stack ... "
+    liftIO $ backendCreateStack bk
+    interactiveIO tick
 
-downMigrateUI :: BiMigration -> Runner ()
+downMigrateUI :: Backend b => BiMigration -> Runner b ()
 downMigrateUI m = do
-  conn <- migrateSettingsConnection <$> ask
-  liftIO $ do
-    putStr $ "Migrating down from '" ++ biMigrationName m ++ "' ... "
-    downMigrate conn m
-    tick
+  bk <- migrateSettingsBackend <$> ask
+  interactiveIO $ putStr $ "Migrating down from '" ++ biMigrationName m ++ "' ... "
+  liftIO $ backendDownMigrate bk m
+  interactiveIO tick
 
-upMigrateUI :: Migration -> Runner ()
+upMigrateUI :: Backend b => Migration -> Runner b ()
 upMigrateUI m = do
-  conn <- migrateSettingsConnection <$> ask
-  liftIO $ do
-    putStr $ "Migrating up to '" ++ migrationName m ++ "' ... "
-    upMigrate conn m
-    tick
+  bk <- migrateSettingsBackend <$> ask
+  interactiveIO $ putStr $ "Migrating up to '" ++ migrationName m ++ "' ... "
+  liftIO $ backendUpMigrate bk m
+  interactiveIO tick
 
-runPlan :: Plan -> Runner ()
+runPlan :: Backend b => Plan -> Runner b ()
 runPlan plan = case plan of
   AbortivePlan downs failed -> do
-    ans <- liftIO $ do
-      putError "The following down-migrations are not provided:"
-      mapM_ (putStrLn . upMigrationName)  failed
-      putStrLn "The following down-migrations can be performed:"
-      mapM_ (putStrLn . biMigrationName)  downs
-      putStrLn "Would you like to do this? [Y/n]"
-      getLine
-    when (ans == "Y") $ do
-      liftIO $ putStrLn "Down-migrating."
-      mapM_ downMigrateUI downs
+    interactive <- migrateSettingsInteractive <$> ask
+    if interactive
+      then do
+        ans <- liftIO $ do
+          putError "The following down-migrations are not provided:"
+          mapM_ (putStrLn . upMigrationName)  failed
+          putStrLn "The following down-migrations can be performed:"
+          mapM_ (putStrLn . biMigrationName)  downs
+          putStrLn "Would you like to do this? [Y/n]"
+          getLine
+        when (ans == "Y") $ do
+          liftIO $ putStrLn "Down-migrating."
+          mapM_ downMigrateUI downs
+      else 
+        error $ "The following down-migrations are not provided:" ++ concatMap upMigrationName failed
 
   Plan downs ups -> do
     mapM_ downMigrateUI downs
     mapM_ upMigrateUI ups
-    liftIO $ putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
+    interactiveIO $ putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
 
-runMigrations' :: [Migration] -> Runner ()
+runMigrations' :: Backend b => [Migration] -> Runner b ()
 runMigrations' migs = do
-  conn <- migrateSettingsConnection <$> ask
+  bk <- migrateSettingsBackend <$> ask
   ensureTableUI
-  olds <- liftIO $ getMigrations conn
+  olds <- liftIO $ backendGetMigrations bk
   runPlan $ planMigration olds migs
 
-runMigrations :: MigrateSettings -> [Migration] -> IO ()
+runMigrations :: Backend b => MigrateSettings b -> [Migration] -> IO ()
 runMigrations settings migs = runReaderT (runMigrations' migs) settings
