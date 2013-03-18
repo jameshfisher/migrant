@@ -2,6 +2,7 @@ module Database.PostgreSQL.Migrate.Runner
   ( runMigrations
   ) where
 
+import Data.Maybe
 import Data.List
 import Control.Applicative ((<$>))
 import Control.Monad
@@ -13,6 +14,12 @@ import Database.PostgreSQL.Migrate.Terminal
 
 tick :: IO ()
 tick = putSuccess "✔"
+
+showUpMigration :: Show q => Migration q -> String
+showUpMigration m = fromMaybe (show $ migrationUp m) $ migrationDescription m
+
+showDownMigration :: Show q => BiMigration q -> String
+showDownMigration m = fromMaybe (show $ biMigrationDown m) $ biMigrationDescription m
 
 type Runner b q = ReaderT (MigrateSettings b q) IO
 
@@ -36,14 +43,14 @@ ensureTableUI = do
 downMigrateUI :: Backend b q => BiMigration q -> Runner b q ()
 downMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
-  interactiveIO $ putStr $ "Migrating down from '" ++ biMigrationDescription m ++ "' ... "
+  interactiveIO $ putStr $ "Migrating down: " ++ showDownMigration m ++ " ... "
   liftIO $ backendDownMigrate bk m
   interactiveIO tick
 
 upMigrateUI :: Backend b q => Migration q -> Runner b q ()
 upMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
-  interactiveIO $ putStr $ "Migrating up to '" ++ migrationDescription m ++ "' ... "
+  interactiveIO $ putStr $ "Migrating up: " ++ showUpMigration m ++ " ... "
   liftIO $ backendUpMigrate bk m
   interactiveIO tick
 
@@ -55,16 +62,16 @@ runPlan plan = case plan of
       then do
         ans <- liftIO $ do
           putError "The following down-migrations are not provided:"
-          mapM_ (putStrLn . migrationDescription)  failed
+          mapM_ (putStrLn . showUpMigration)  failed
           putStrLn "The following down-migrations can be performed:"
-          mapM_ (putStrLn . biMigrationDescription)  downs
+          mapM_ (putStrLn . showDownMigration)  downs
           putStrLn "Would you like to do this? [Y/n]"
           getLine
         when (ans == "Y") $ do
           liftIO $ putStrLn "Down-migrating."
           mapM_ downMigrateUI downs
       else 
-        error $ "The following down-migrations are not provided: " ++ intercalate ", " (map migrationDescription failed)
+        error $ "The following down-migrations are not provided: " ++ intercalate ", " (map showUpMigration failed)
 
   Plan downs ups -> do
     mapM_ downMigrateUI downs

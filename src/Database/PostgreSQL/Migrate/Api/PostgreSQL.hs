@@ -41,14 +41,12 @@ instance Backend Connection String where
             constraint _migration_id_sequence check
               ( (id = 1 and parent is null)
                 or id = parent+1 )
-        , description
-            text
-            constraint _migration_name_not_null not null
-            constraint _migration_name_unique unique
         , up
             text
             constraint _migration_up_not_null not null
         , down
+            text
+        , description
             text
         );
     |]
@@ -62,11 +60,14 @@ instance Backend Connection String where
 
   backendDownMigrate conn mig = withTransaction conn $ do
     _ <- execute_ conn (Query $ fromString $ biMigrationDown mig)
-    _ <- execute conn
+    affected <- execute conn
       [sql|
         delete from _migration
-        where description = ?
-      |] (Only $ biMigrationDescription mig)
+        where
+          id = (select max(id) from _migration)
+          and up = ?
+      |] (Only $ biMigrationUp mig)
+    when (affected != 1) $ error "tried to down-migrate a migration that isn't the top of the stack"
     return ()
 
   backendUpMigrate conn mig = withTransaction conn $ do

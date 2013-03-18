@@ -8,16 +8,16 @@ module Database.PostgreSQL.Migrate.Data
 data Migration q = Migration
   { migrationUp   :: q
   , migrationDown :: Maybe q
-  , migrationDescription :: String
+  , migrationDescription :: Maybe String
   } deriving (Show)
 
 data BiMigration q = BiMigration
   { biMigrationUp   :: q
   , biMigrationDown :: q
-  , biMigrationDescription :: String
+  , biMigrationDescription :: Maybe String
   } deriving (Show)
 
-class Eq q => Backend b q | b -> q where
+class (Eq q, Show q) => Backend b q | b -> q where
   backendStackExists   :: b -> IO Bool
   backendCreateStack   :: b -> IO ()
   backendGetMigrations :: b -> IO [Migration q]
