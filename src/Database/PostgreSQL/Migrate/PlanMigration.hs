@@ -24,10 +24,10 @@ collectUps = filter (isNothing . migrationDown)
 
 tryMigrateDown :: Eq q => [Migration q] -> ([BiMigration q], [Migration q])
 tryMigrateDown [] = ([], [])
-tryMigrateDown (Migration n u md : ms) = case md of
-  Nothing  ->  ([], Migration n u md : collectUps ms)
+tryMigrateDown (Migration u md descn : ms) = case md of
+  Nothing  ->  ([], Migration u md descn : collectUps ms)
   Just d   ->  let (bis, ups) = tryMigrateDown ms
-              in (BiMigration n u d : bis, ups)
+              in (BiMigration u d descn : bis, ups)
 
 planMigration :: Eq q => [Migration q] -> [Migration q] -> Plan q
 planMigration old new =

@@ -36,14 +36,14 @@ ensureTableUI = do
 downMigrateUI :: Backend b q => BiMigration q -> Runner b q ()
 downMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
-  interactiveIO $ putStr $ "Migrating down from '" ++ biMigrationName m ++ "' ... "
+  interactiveIO $ putStr $ "Migrating down from '" ++ biMigrationDescription m ++ "' ... "
   liftIO $ backendDownMigrate bk m
   interactiveIO tick
 
 upMigrateUI :: Backend b q => Migration q -> Runner b q ()
 upMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
-  interactiveIO $ putStr $ "Migrating up to '" ++ migrationName m ++ "' ... "
+  interactiveIO $ putStr $ "Migrating up to '" ++ migrationDescription m ++ "' ... "
   liftIO $ backendUpMigrate bk m
   interactiveIO tick
 
@@ -55,16 +55,16 @@ runPlan plan = case plan of
       then do
         ans <- liftIO $ do
           putError "The following down-migrations are not provided:"
-          mapM_ (putStrLn . migrationName)  failed
+          mapM_ (putStrLn . migrationDescription)  failed
           putStrLn "The following down-migrations can be performed:"
-          mapM_ (putStrLn . biMigrationName)  downs
+          mapM_ (putStrLn . biMigrationDescription)  downs
           putStrLn "Would you like to do this? [Y/n]"
           getLine
         when (ans == "Y") $ do
           liftIO $ putStrLn "Down-migrating."
           mapM_ downMigrateUI downs
       else 
-        error $ "The following down-migrations are not provided: " ++ intercalate ", " (map migrationName failed)
+        error $ "The following down-migrations are not provided: " ++ intercalate ", " (map migrationDescription failed)
 
   Plan downs ups -> do
     mapM_ downMigrateUI downs

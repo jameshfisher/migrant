@@ -6,15 +6,15 @@ module Database.PostgreSQL.Migrate.Data
   ) where
 
 data Migration q = Migration
-  { migrationName :: String
-  , migrationUp   :: q
+  { migrationUp   :: q
   , migrationDown :: Maybe q
+  , migrationDescription :: String
   } deriving (Show)
 
 data BiMigration q = BiMigration
-  { biMigrationName :: String
-  , biMigrationUp   :: q
+  { biMigrationUp   :: q
   , biMigrationDown :: q
+  , biMigrationDescription :: String
   } deriving (Show)
 
 class Eq q => Backend b q | b -> q where

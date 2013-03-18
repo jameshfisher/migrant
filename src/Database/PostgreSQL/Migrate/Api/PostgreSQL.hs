@@ -41,7 +41,7 @@ instance Backend Connection String where
             constraint _migration_id_sequence check
               ( (id = 1 and parent is null)
                 or id = parent+1 )
-        , name
+        , description
             text
             constraint _migration_name_not_null not null
             constraint _migration_name_unique unique
@@ -55,7 +55,7 @@ instance Backend Connection String where
 
   backendGetMigrations conn = query_ conn
     [sql|
-      select name, up, down
+      select up, down, description
       from _migration
       order by id asc
     |]
@@ -65,15 +65,15 @@ instance Backend Connection String where
     _ <- execute conn
       [sql|
         delete from _migration
-        where name = ?
-      |] (Only $ biMigrationName mig)
+        where description = ?
+      |] (Only $ biMigrationDescription mig)
     return ()
 
   backendUpMigrate conn mig = withTransaction conn $ do
     _ <- execute_ conn (Query $ fromString $ migrationUp mig)
     _ <- execute conn
       [sql|
-        insert into _migration (id, parent, name, up, down)
+        insert into _migration (id, parent, up, down, description)
         values (
           (select
             case when (select max(id) from _migration) is null
@@ -81,5 +81,5 @@ instance Backend Connection String where
             else (select max(id) from _migration)+1
             end),
           (select max(id) from _migration), ?, ?, ?)
-      |] (migrationName mig, migrationUp mig, migrationDown mig)
+      |] (migrationUp mig, migrationDown mig, migrationDescription mig)
     return ()
