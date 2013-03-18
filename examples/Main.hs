@@ -21,6 +21,6 @@ main = do
     }
 
   runMigrations settings
-    [ Migration "first"   "create table foo (bar integer)"   (Just "drop table foo")
-    , Migration "another" "insert into foo (bar) values (1)" (Just "delete from foo where bar=1")
+    [ Migration "first"   "create table foo (bar integer)"      (Just "drop table foo")
+    , Migration "another" "insert into foo (bar) values (1)"    (Just "delete from foo where bar=1")
     ]
