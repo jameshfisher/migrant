@@ -1,4 +1,4 @@
-module Database.PostgreSQL.Migrate.Api.PostgreSQL where
+module Database.PostgreSQL.Migrate.Backend.PostgreSQL where
 
 import Control.Applicative
 import Control.Monad
