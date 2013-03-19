@@ -38,5 +38,4 @@ library
     OverloadedStrings,
     MultiParamTypeClasses,
     FunctionalDependencies,
-    TypeSynonymInstances,
     FlexibleInstances
