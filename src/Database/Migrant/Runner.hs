@@ -3,7 +3,6 @@ module Database.Migrant.Runner
   ) where
 
 import Data.Maybe
-import Data.List
 import Control.Applicative ((<$>))
 import Control.Monad
 import Control.Monad.Reader
@@ -14,6 +13,9 @@ import Database.Migrant.Terminal
 
 tick :: IO ()
 tick = putSuccess "✔"
+
+indent :: String -> String
+indent = unlines . map ("    "++) . lines
 
 showUpMigration :: Show q => Migration q -> String
 showUpMigration m = fromMaybe (show $ migrationUp m) $ migrationDescription m
@@ -40,30 +42,23 @@ ensureTableUI = do
     liftIO $ backendCreateStack bk
     interactiveIO tick
 
--- TODO downMigrateUI and upMigrateUI are almost the same
-downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e (Maybe e)
-downMigrateUI m = do
+migrateUI :: Backend b q e => (b -> m -> IO (Maybe e)) -> String -> (m -> String) -> m -> Runner b q e (Maybe e)
+migrateUI run s showMig m = do
   bk <- migrateSettingsBackend <$> ask
-  interactiveIO $ putStr $ "Migrating down: " ++ showDownMigration m ++ " ... "
-  err <- liftIO $ backendDownMigrate bk m
+  interactiveIO $ putStr $ s ++ showMig m ++ " ... "
+  err <- liftIO $ run bk m
   case err of
     Nothing  -> interactiveIO tick
     Just err -> interactiveIO $ do
       putError "✘ (rolled back)"
-      putError $ show err
+      putError $ indent $ show err
   return err
 
+downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e (Maybe e)
+downMigrateUI = migrateUI backendDownMigrate "Migrating down: " showDownMigration
+
 upMigrateUI :: Backend b q e => Migration q -> Runner b q e (Maybe e)
-upMigrateUI m = do
-  bk <- migrateSettingsBackend <$> ask
-  interactiveIO $ putStr $ "Migrating up: " ++ showUpMigration m ++ " ... "
-  err <- liftIO $ backendUpMigrate bk m
-  case err of
-    Nothing  -> interactiveIO tick
-    Just err -> interactiveIO $ do
-      putError "✘ (rolled back)"
-      putError $ show err
-  return err
+upMigrateUI = migrateUI backendUpMigrate "Migrating up: " showUpMigration
 
 -- TODO downMigrateListUI and upMigrateListUI are almost the same
 downMigrateListUI :: Backend b q e => [BiMigration q] -> Runner b q e (Maybe e)

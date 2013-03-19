@@ -3,12 +3,18 @@ module Database.Migrant.Backend.PostgreSQL where
 import Control.Applicative
 import Control.Monad
 import Control.Exception
+import Data.ByteString.Char8
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Types
 import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.SqlQQ
 
 import Database.Migrant.Data
+
+newtype PostgreSqlError = PostgreSqlError SqlError
+
+instance Show PostgreSqlError where
+  show (PostgreSqlError e) = unpack $ sqlErrorMsg e
 
 catchSqlErrorEither :: IO a -> IO (Either SqlError a)
 catchSqlErrorEither act = do
@@ -19,11 +25,11 @@ catchSqlErrorEither act = do
       Just ex@(SqlError{..}) -> return $ Left ex
       Nothing                -> throwIO ex
 
-catchSqlError :: IO () -> IO (Maybe SqlError)
+catchSqlError :: IO () -> IO (Maybe PostgreSqlError)
 catchSqlError act = do
   e <- catchSqlErrorEither act
   return $ case e of
-    Left e  -> Just e
+    Left e  -> Just $ PostgreSqlError e
     Right _ -> Nothing
 
 data DbInt = DbInt Int
@@ -37,7 +43,7 @@ instance FromRow (Migration Query) where
     description <- field
     return $ Migration (Query up) (Query <$> down) description
 
-instance Backend Connection Query SqlError where
+instance Backend Connection Query PostgreSqlError where
   backendStackExists conn = do
     [DbInt count] <- query_ conn
       [sql|

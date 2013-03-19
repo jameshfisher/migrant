@@ -21,7 +21,8 @@ library
     base,
     postgresql-simple,
     ansi-terminal,
-    mtl
+    mtl,
+    bytestring
   exposed-modules:
     Database.Migrant,
     Database.Migrant.Backend.PostgreSQL,

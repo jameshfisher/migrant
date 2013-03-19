@@ -44,7 +44,7 @@ instance Backend (IORef MockConnection) MockQuery String where
 
   backendDownMigrate conn (BiMigration up down _) = case down of
     Nothing -> return $ Just "MockConnection: invalid query for down-migration"
-    Just downValid -> do     
+    Just downValid -> do
       db <- readIORef conn
       let maybeStack = mockConnectionStack db
       case maybeStack of
