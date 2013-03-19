@@ -32,10 +32,21 @@ library
     Database.PostgreSQL.Migrate.PlanMigration
     Database.PostgreSQL.Migrate.Runner
     Database.PostgreSQL.Migrate.Backend.Mock
+    Database.PostgreSQL.Migrate.Test
   ghc-options: -Wall
   extensions:
     QuasiQuotes,
     OverloadedStrings,
     MultiParamTypeClasses,
     FunctionalDependencies,
+    FlexibleInstances
+
+test-suite test-postgres-migrate
+  type: detailed-0.9
+  test-module: Database.PostgreSQL.Migrate.Test
+  hs-source-dirs: src
+  build-depends:
+    base,
+    Cabal >= 1.9.2
+  extensions:
     FlexibleInstances
