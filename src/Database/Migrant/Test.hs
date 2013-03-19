@@ -1,4 +1,4 @@
-module Database.PostgreSQL.Migrate.Test (tests) where
+module Database.Migrant.Test (tests) where
 
 import Distribution.TestSuite
 

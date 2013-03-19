@@ -1,9 +1,9 @@
-module Database.PostgreSQL.Migrate.Backend.Mock where
+module Database.Migrant.Backend.Mock where
 
 import Data.Maybe
 import Data.IORef
 
-import Database.PostgreSQL.Migrate.Data
+import Database.Migrant.Data
 
 type MockState = Int
 

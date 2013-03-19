@@ -1,7 +1,7 @@
-name: postgres-migrate
+name: migrant
 version: 0.0.1
-synopsis: Database migration for PostgreSQL
-description: Database migration for PostgreSQL
+synopsis: Database migration
+description: Database migration
 license: LGPL-3
 license-file: LICENSE.txt
 author: James Harrison Fisher <jameshfisher@gmail.com>
@@ -13,7 +13,7 @@ cabal-version: >= 1.6
 
 source-repository head
   type: git
-  location: https://bitbucket.org/eegg/postgres-migrate
+  location: https://bitbucket.org/eegg/migrant
 
 library
   hs-source-dirs: src
@@ -23,16 +23,15 @@ library
     ansi-terminal,
     mtl
   exposed-modules:
-    Database.PostgreSQL.Migrate,
-    Database.PostgreSQL.Migrate.Backend.PostgreSQL,
-    Database.PostgreSQL.Migrate.Shortcuts.PostgreSQL
+    Database.Migrant,
+    Database.Migrant.Backend.PostgreSQL,
+    Database.Migrant.Shortcuts.PostgreSQL
   other-modules:
-    Database.PostgreSQL.Migrate.Terminal
-    Database.PostgreSQL.Migrate.Data
-    Database.PostgreSQL.Migrate.PlanMigration
-    Database.PostgreSQL.Migrate.Runner
-    Database.PostgreSQL.Migrate.Backend.Mock
-    Database.PostgreSQL.Migrate.Test
+    Database.Migrant.Terminal
+    Database.Migrant.Data
+    Database.Migrant.PlanMigration
+    Database.Migrant.Runner
+    Database.Migrant.Backend.Mock
   ghc-options: -Wall
   extensions:
     QuasiQuotes,
@@ -43,10 +42,10 @@ library
 
 test-suite test-postgres-migrate
   type: detailed-0.9
-  test-module: Database.PostgreSQL.Migrate.Test
+  test-module: Database.Migrant.Test
   hs-source-dirs: src
   build-depends:
     base,
-    Cabal >= 1.9.2
+    Cabal >= 1.14.0
   extensions:
     FlexibleInstances

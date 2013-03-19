@@ -1,8 +1,8 @@
-module Database.PostgreSQL.Migrate.Main where
+module Database.Migrant.Main where
 
 import Database.PostgreSQL.Simple
 
-import Database.PostgreSQL.Migrate
+import Database.Migrant
 
 main :: IO ()
 main = do

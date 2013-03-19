@@ -1,4 +1,4 @@
-module Database.PostgreSQL.Migrate.Terminal
+module Database.Migrant.Terminal
   ( putSuccess
   , putError
   ) where

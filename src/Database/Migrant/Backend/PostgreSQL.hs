@@ -1,4 +1,4 @@
-module Database.PostgreSQL.Migrate.Backend.PostgreSQL where
+module Database.Migrant.Backend.PostgreSQL where
 
 import Control.Applicative
 import Control.Monad
@@ -8,7 +8,7 @@ import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.SqlQQ
 import Data.String (IsString(fromString))
 
-import Database.PostgreSQL.Migrate.Data
+import Database.Migrant.Data
 
 data DbInt = DbInt Int
 instance FromRow DbInt where

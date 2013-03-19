@@ -1,4 +1,4 @@
-module Database.PostgreSQL.Migrate.PlanMigration
+module Database.Migrant.PlanMigration
   ( Plan (..)
   , planMigration
   ) where
@@ -6,7 +6,7 @@ module Database.PostgreSQL.Migrate.PlanMigration
 import Data.Maybe
 import Data.Function
 
-import Database.PostgreSQL.Migrate.Data
+import Database.Migrant.Data
 
 data Plan q
   = AbortivePlan [BiMigration q] [Migration q]

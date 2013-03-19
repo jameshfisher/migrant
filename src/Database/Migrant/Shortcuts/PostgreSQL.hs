@@ -1,8 +1,8 @@
-module Database.PostgreSQL.Migrate.Shortcuts.PostgreSQL
+module Database.Migrant.Shortcuts.PostgreSQL
   ( addColumn
   ) where
 
-import Database.PostgreSQL.Migrate.Data (Migration (..))
+import Database.Migrant.Data (Migration (..))
 
 addColumn :: String -> String -> String -> Migration String
 addColumn table col ty = Migration

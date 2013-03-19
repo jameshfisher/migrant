@@ -1,4 +1,4 @@
-module Database.PostgreSQL.Migrate.Data
+module Database.Migrant.Data
   ( Migration (..)
   , BiMigration (..)
   , Backend (..)

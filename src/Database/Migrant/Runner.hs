@@ -1,4 +1,4 @@
-module Database.PostgreSQL.Migrate.Runner
+module Database.Migrant.Runner
   ( runMigrations
   ) where
 
@@ -8,9 +8,9 @@ import Control.Applicative ((<$>))
 import Control.Monad
 import Control.Monad.Reader
 
-import Database.PostgreSQL.Migrate.Data
-import Database.PostgreSQL.Migrate.PlanMigration
-import Database.PostgreSQL.Migrate.Terminal
+import Database.Migrant.Data
+import Database.Migrant.PlanMigration
+import Database.Migrant.Terminal
 
 tick :: IO ()
 tick = putSuccess "✔"
