@@ -22,7 +22,7 @@ mockConnect = newIORef $ MockConnection {
   mockConnectionState = 0
   }
 
-instance Backend (IORef MockConnection) MockQuery where
+instance Backend (IORef MockConnection) MockQuery String where
   backendStackExists conn = do
     db <- readIORef conn
     let stack = mockConnectionStack db
@@ -43,8 +43,8 @@ instance Backend (IORef MockConnection) MockQuery where
       Just stack -> return stack
 
   backendDownMigrate conn (BiMigration up down _) = case down of
-    Nothing -> error "MockConnection: invalid query for down-migration"
-    Just downValid -> do       
+    Nothing -> return $ Just "MockConnection: invalid query for down-migration"
+    Just downValid -> do     
       db <- readIORef conn
       let maybeStack = mockConnectionStack db
       case maybeStack of
@@ -53,19 +53,23 @@ instance Backend (IORef MockConnection) MockQuery where
                         []   -> error "MockConnection: tried to down-migrate when the stack is empty!"
                         m:ms -> if migrationUp m /= up
                                   then error "MockConnection: tried to down-migrate a migration that isn't the top of the stack"
-                                  else writeIORef conn $ db {
-                                    mockConnectionStack = Just ms,
-                                    mockConnectionState = (mockConnectionState db) - downValid
-                                    }
+                                  else do
+                                    writeIORef conn $ db {
+                                      mockConnectionStack = Just ms,
+                                      mockConnectionState = (mockConnectionState db) - downValid
+                                      }
+                                    return Nothing
 
   backendUpMigrate conn m@(Migration up _ _) = case up of
-    Nothing -> error "MockConnection: invalid query for up-migration"
+    Nothing -> return $ Just "MockConnection: invalid query for up-migration"
     Just upValid -> do      
       db <- readIORef conn
       let maybeStack = mockConnectionStack db
       case maybeStack of
         Nothing    -> error "MockConnection: tried to up-migrate when no stack exists!"
-        Just stack -> writeIORef conn $ db {
-                        mockConnectionStack = Just (m:stack),
-                        mockConnectionState = (mockConnectionState db) + upValid
-                        }
+        Just stack -> do
+                        writeIORef conn $ db {
+                          mockConnectionStack = Just (m:stack),
+                          mockConnectionState = (mockConnectionState db) + upValid
+                          }
+                        return Nothing

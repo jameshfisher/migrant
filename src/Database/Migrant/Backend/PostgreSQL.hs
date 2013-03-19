@@ -2,13 +2,29 @@ module Database.Migrant.Backend.PostgreSQL where
 
 import Control.Applicative
 import Control.Monad
+import Control.Exception
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Types
 import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.SqlQQ
-import Data.String (IsString(fromString))
 
 import Database.Migrant.Data
+
+catchSqlErrorEither :: IO a -> IO (Either SqlError a)
+catchSqlErrorEither act = do
+  ex <- try act
+  case ex of
+    Right r -> return $ Right r
+    Left ex -> case fromException ex of
+      Just ex@(SqlError{..}) -> return $ Left ex
+      Nothing                -> throwIO ex
+
+catchSqlError :: IO () -> IO (Maybe SqlError)
+catchSqlError act = do
+  e <- catchSqlErrorEither act
+  return $ case e of
+    Left e  -> Just e
+    Right _ -> Nothing
 
 data DbInt = DbInt Int
 instance FromRow DbInt where
@@ -21,7 +37,7 @@ instance FromRow (Migration Query) where
     description <- field
     return $ Migration (Query up) (Query <$> down) description
 
-instance Backend Connection Query where
+instance Backend Connection Query SqlError where
   backendStackExists conn = do
     [DbInt count] <- query_ conn
       [sql|
@@ -62,7 +78,7 @@ instance Backend Connection Query where
       order by id asc
     |]
 
-  backendDownMigrate conn mig = withTransaction conn $ do
+  backendDownMigrate conn mig = catchSqlError $ withTransaction conn $ void $ do
     _ <- execute_ conn $ biMigrationDown mig
     affected <- execute conn
       [sql|
@@ -72,9 +88,8 @@ instance Backend Connection Query where
           and up = ?
       |] (Only $ fromQuery $ biMigrationUp mig)
     when (affected /= 1) $ error "tried to down-migrate a migration that isn't the top of the stack"
-    return ()
 
-  backendUpMigrate conn mig = withTransaction conn $ do
+  backendUpMigrate conn mig = catchSqlError $ withTransaction conn $ do
     _ <- execute_ conn $ migrationUp mig
     _ <- execute conn
       [sql|
