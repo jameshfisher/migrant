@@ -67,7 +67,7 @@ instance Backend Connection String where
           id = (select max(id) from _migration)
           and up = ?
       |] (Only $ biMigrationUp mig)
-    when (affected != 1) $ error "tried to down-migrate a migration that isn't the top of the stack"
+    when (affected /= 1) $ error "tried to down-migrate a migration that isn't the top of the stack"
     return ()
 
   backendUpMigrate conn mig = withTransaction conn $ do
