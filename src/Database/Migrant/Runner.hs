@@ -40,21 +40,56 @@ ensureTableUI = do
     liftIO $ backendCreateStack bk
     interactiveIO tick
 
-downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e ()
+-- TODO downMigrateUI and upMigrateUI are almost the same
+downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e (Maybe e)
 downMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   interactiveIO $ putStr $ "Migrating down: " ++ showDownMigration m ++ " ... "
-  liftIO $ backendDownMigrate bk m
-  interactiveIO tick
+  err <- liftIO $ backendDownMigrate bk m
+  case err of
+    Nothing  -> interactiveIO tick
+    Just err -> interactiveIO $ do
+      putError "✘ (rolled back)"
+      putError $ show err
+  return err
 
-upMigrateUI :: Backend b q e => Migration q -> Runner b q e ()
+upMigrateUI :: Backend b q e => Migration q -> Runner b q e (Maybe e)
 upMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   interactiveIO $ putStr $ "Migrating up: " ++ showUpMigration m ++ " ... "
-  liftIO $ backendUpMigrate bk m
-  interactiveIO tick
+  err <- liftIO $ backendUpMigrate bk m
+  case err of
+    Nothing  -> interactiveIO tick
+    Just err -> interactiveIO $ do
+      putError "✘ (rolled back)"
+      putError $ show err
+  return err
 
-runPlan :: Backend b q e => Plan q -> Runner b q e ()
+-- TODO downMigrateListUI and upMigrateListUI are almost the same
+downMigrateListUI :: Backend b q e => [BiMigration q] -> Runner b q e (Maybe e)
+downMigrateListUI ms = case ms of
+  []   -> return Nothing
+  m:ms -> do
+    err <- downMigrateUI m
+    case err of
+      Just err -> do
+        interactiveIO $ putError "Down-migration halted."
+        return $ Just err
+      Nothing  -> downMigrateListUI ms
+
+upMigrateListUI :: Backend b q e => [Migration q] -> Runner b q e (Maybe e)
+upMigrateListUI ms = case ms of
+  []   -> return Nothing
+  m:ms -> do
+    err <- upMigrateUI m
+    case err of
+      Just err -> do
+        interactiveIO $ putError "Up-migration halted."
+        return $ Just err
+      Nothing  -> upMigrateListUI ms
+
+-- TODO better return type
+runPlan :: Backend b q e => Plan q -> Runner b q e Bool
 runPlan plan = case plan of
   AbortivePlan downs failed -> do
     interactive <- migrateSettingsInteractive <$> ask
@@ -67,23 +102,33 @@ runPlan plan = case plan of
           mapM_ (putStrLn . showDownMigration)  downs
           putStrLn "Would you like to do this? [Y/n]"
           getLine
-        when (ans == "Y") $ do
-          liftIO $ putStrLn "Down-migrating."
-          mapM_ downMigrateUI downs
-      else 
-        error $ "The following down-migrations are not provided: " ++ intercalate ", " (map showUpMigration failed)
+        if ans == "Y"
+          then do
+            liftIO $ putStrLn "Down-migrating."
+            err <- downMigrateListUI downs
+            return $ isNothing err
+          else return False
+      else
+        return False
 
   Plan downs ups -> do
-    mapM_ downMigrateUI downs
-    mapM_ upMigrateUI ups
-    interactiveIO $ putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
+    err <- downMigrateListUI downs
+    case err of
+      Just _  -> return False
+      Nothing -> do
+        err <- upMigrateListUI ups
+        case err of
+          Just _ -> return False
+          Nothing -> do
+            interactiveIO $ putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
+            return True
 
-runMigrations' :: Backend b q e => [Migration q] -> Runner b q e ()
+runMigrations' :: Backend b q e => [Migration q] -> Runner b q e Bool
 runMigrations' migs = do
   bk <- migrateSettingsBackend <$> ask
   ensureTableUI
   olds <- liftIO $ backendGetMigrations bk
   runPlan $ planMigration olds migs
 
-runMigrations :: Backend b q e => MigrateSettings b q e -> [Migration q] -> IO ()
+runMigrations :: Backend b q e => MigrateSettings b q e -> [Migration q] -> IO Bool
 runMigrations settings migs = runReaderT (runMigrations' migs) settings

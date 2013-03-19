@@ -25,3 +25,5 @@ main = do
     [ Migration "create table foo (bar integer)"   (Just "drop table foo")              (Just "first")
     , Migration "insert into foo (bar) values (1)" (Just "delete from foo where bar=1") Nothing
     ]
+
+  return ()
