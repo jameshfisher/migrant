@@ -14,10 +14,14 @@ data DbInt = DbInt Int
 instance FromRow DbInt where
   fromRow = DbInt <$> field
 
-instance FromRow (Migration String) where
-  fromRow = Migration <$> field <*> field <*> field
+instance FromRow (Migration Query) where
+  fromRow = do
+    up <- field
+    down <- field
+    description <- field
+    return $ Migration (Query up) (Query <$> down) description
 
-instance Backend Connection String where
+instance Backend Connection Query where
   backendStackExists conn = do
     [DbInt count] <- query_ conn
       [sql|
@@ -59,19 +63,19 @@ instance Backend Connection String where
     |]
 
   backendDownMigrate conn mig = withTransaction conn $ do
-    _ <- execute_ conn (Query $ fromString $ biMigrationDown mig)
+    _ <- execute_ conn $ biMigrationDown mig
     affected <- execute conn
       [sql|
         delete from _migration
         where
           id = (select max(id) from _migration)
           and up = ?
-      |] (Only $ biMigrationUp mig)
+      |] (Only $ fromQuery $ biMigrationUp mig)
     when (affected /= 1) $ error "tried to down-migrate a migration that isn't the top of the stack"
     return ()
 
   backendUpMigrate conn mig = withTransaction conn $ do
-    _ <- execute_ conn (Query $ fromString $ migrationUp mig)
+    _ <- execute_ conn $ migrationUp mig
     _ <- execute conn
       [sql|
         insert into _migration (id, parent, up, down, description)
@@ -82,5 +86,5 @@ instance Backend Connection String where
             else (select max(id) from _migration)+1
             end),
           (select max(id) from _migration), ?, ?, ?)
-      |] (migrationUp mig, migrationDown mig, migrationDescription mig)
+      |] (fromQuery $ migrationUp mig, fromQuery <$> migrationDown mig, migrationDescription mig)
     return ()

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Database.Migrant.Main where
 
 import Database.PostgreSQL.Simple
