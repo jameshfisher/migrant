@@ -2,8 +2,15 @@
 	"folders":
 	[
 		{
-			"path": "/home/james/dev/hs/pg/migrate",
-      "file_exclude_patterns": ["*.hi", "Main"]
+			"file_exclude_patterns":
+			[
+				"*.hi",
+				"Main"
+			],
+			"path": "/home/james/dev/hs/pg/migrate"
+		},
+		{
+			"path": ".git"
 		}
 	]
 }
