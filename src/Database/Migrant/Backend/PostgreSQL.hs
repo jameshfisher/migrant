@@ -57,23 +57,18 @@ instance Backend Connection Query PostgreSqlError where
   backendCreateStack conn = void $ execute_ conn
     [sql|
       create table _migration
-        ( id
-            integer
+        ( id integer
             constraint _migration_id_pkey primary key
             constraint _migration_id_positive check (0 < id)
-        , parent
-            integer
+        , parent integer
             constraint _migration_parent_fkey references _migration(id)
             constraint _migration_id_sequence check
               ( (id = 1 and parent is null)
                 or id = parent+1 )
-        , up
-            text
+        , up text
             constraint _migration_up_not_null not null
-        , down
-            text
-        , description
-            text
+        , down text
+        , description text
         );
     |]
 
