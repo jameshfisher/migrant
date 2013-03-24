@@ -7,7 +7,7 @@
 				"*.hi",
 				"Main"
 			],
-			"path": "/home/james/dev/hs/pg/migrate"
+			"path": "."
 		},
 		{
 			"path": ".git"
