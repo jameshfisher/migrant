@@ -1,6 +1,5 @@
 module Database.Migrant.Backend.Mock where
 
-import Data.Maybe
 import Data.IORef
 
 import Database.Migrant.Data

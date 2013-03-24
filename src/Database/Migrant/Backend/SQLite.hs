@@ -2,6 +2,7 @@
 module Database.Migrant.Backend.SQLite where
 
 import MultiLineString
+import Control.Monad
 import Database.SQLite
 
 import Database.Migrant.Data
@@ -46,10 +47,12 @@ instance Backend SQLiteHandle String String where
                     foreign key (parent) references _migration (id)
                 )
             |]
-        return $ n == 0
-      case res of
-        Nothing  -> return ()
-        Just err -> error $ "Program error: " ++ err
+          case res of
+            Nothing  -> return ()
+            Just err -> error $ "Program error: " ++ err
+
+        return (n == 0)
+
       _                -> error $ "Program error: " ++ show rows
 
   backendGetMigrations handle = do

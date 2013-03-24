@@ -42,30 +42,30 @@ instance FromRow (Migration Query) where
 instance Backend Connection Query PostgreSqlError where
 
   backendEnsureStack conn = do
-    createStack <- query_ conn
+    [[createStack]] <- query_ conn
       [sql|
         select count(*) = 0
-        from pg_tables t
-        where t.schemaname = 'public'
-          and t.tablename  = '_migration'
+          from pg_namespace
+          where nspname = 'migrant'
       |]
 
     when createStack $ void $ execute_ conn
       [sql|
-        create table _migration
-          ( id integer
-              constraint _migration_id_pkey primary key
-              constraint _migration_id_positive check (0 < id)
-          , parent integer
-              constraint _migration_parent_fkey references _migration(id)
-              constraint _migration_id_sequence check
-                ( (id = 1 and parent is null)
-                  or id = parent+1 )
-          , up text
-              constraint _migration_up_not_null not null
-          , down text
-          , description text
-          );
+        create schema migrant
+          create table migrant.migration
+            ( id integer
+                constraint migration_id_pkey primary key
+                constraint migration_id_positive check (0 < id)
+            , parent integer
+                constraint migration_parent_fkey references migrant.migration(id)
+                constraint migration_id_sequence check
+                  ( (id = 1 and parent is null)
+                    or id = parent+1 )
+            , up text
+                constraint migration_up_not_null not null
+            , down text
+            , description text
+            );
       |]
 
     return createStack
@@ -74,7 +74,7 @@ instance Backend Connection Query PostgreSqlError where
   backendGetMigrations conn = query_ conn
     [sql|
       select up, down, description
-      from _migration
+      from migrant.migration
       order by id asc
     |]
 
@@ -82,9 +82,9 @@ instance Backend Connection Query PostgreSqlError where
     _ <- execute_ conn $ biMigrationDown mig
     affected <- execute conn
       [sql|
-        delete from _migration
+        delete from migrant.migration
         where
-          id = (select max(id) from _migration)
+          id = (select max(id) from migrant.migration)
           and up = ?
       |] (Only $ fromQuery $ biMigrationUp mig)
     when (affected /= 1) $ error "tried to down-migrate a migration that isn't the top of the stack"
@@ -93,13 +93,13 @@ instance Backend Connection Query PostgreSqlError where
     _ <- execute_ conn $ migrationUp mig
     _ <- execute conn
       [sql|
-        insert into _migration (id, parent, up, down, description)
+        insert into migrant.migration (id, parent, up, down, description)
         values (
           (select
-            case when (select max(id) from _migration) is null
+            case when (select max(id) from migrant.migration) is null
             then 1
-            else (select max(id) from _migration)+1
+            else (select max(id) from migrant.migration)+1
             end),
-          (select max(id) from _migration), ?, ?, ?)
+          (select max(id) from migrant.migration), ?, ?, ?)
       |] (fromQuery $ migrationUp mig, fromQuery <$> migrationDown mig, migrationDescription mig)
     return ()

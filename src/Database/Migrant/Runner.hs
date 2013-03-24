@@ -37,8 +37,8 @@ ensureTableUI :: Backend b q e => Runner b q e ()
 ensureTableUI = do
   bk <- migrateSettingsBackend <$> ask
   created <- liftIO $ backendEnsureStack bk
-  interactiveIO $ do
-    putStr "Created migration stack."
+  when created $ interactiveIO $ do
+    putStr "Created migration stack "
     tick
 
 migrateUI :: Backend b q e => (b -> m -> IO (Maybe e)) -> String -> (m -> String) -> m -> Runner b q e (Maybe e)
