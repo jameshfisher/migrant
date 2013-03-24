@@ -18,8 +18,7 @@ data BiMigration q = BiMigration
   } deriving (Show)
 
 class (Eq q, Show q, Show e) => Backend b q e | b -> q e where
-  backendStackExists   :: b -> IO Bool
-  backendCreateStack   :: b -> IO ()
+  backendEnsureStack   :: b -> IO Bool
   backendGetMigrations :: b -> IO [Migration q]
   backendDownMigrate   :: b -> BiMigration q -> IO (Maybe e)
   backendUpMigrate     :: b -> Migration q -> IO (Maybe e)

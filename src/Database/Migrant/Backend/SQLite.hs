@@ -14,7 +14,8 @@ raiseLeft act = do
     Right v  -> return v
 
 instance Backend SQLiteHandle String String where
-  backendStackExists handle = do
+
+  backendEnsureStack handle = do
     rows <- raiseLeft $ execStatement handle
       [str|
         select name
@@ -23,32 +24,33 @@ instance Backend SQLiteHandle String String where
             type='table'
             and name='_migration'
       |]
+      
     case rows of
-      [[[(_, Int n)]]] -> return $ n == 1
+      [[[(_, Int n)]]] -> do
+        when (n == 0) $ do
+          res <- execStatement_ handle
+            [str|
+              create table _migration
+                ( id integer
+                    constraint _migration_id_pkey primary key
+                    constraint _migration_id_positive check (0 < id)
+                , parent integer
+                    constraint _migration_id_sequence check
+                      ( (id = 1 and parent is null)
+                        or id = parent+1 )
+                , up text
+                    constraint _migration_up_not_null not null
+                , down text
+                , description text
+                , constraint _migration_parent_fkey
+                    foreign key (parent) references _migration (id)
+                )
+            |]
+        return $ n == 0
+      case res of
+        Nothing  -> return ()
+        Just err -> error $ "Program error: " ++ err
       _                -> error $ "Program error: " ++ show rows
-
-  backendCreateStack handle = do
-    res <- execStatement_ handle
-      [str|
-        create table _migration
-          ( id integer
-              constraint _migration_id_pkey primary key
-              constraint _migration_id_positive check (0 < id)
-          , parent integer
-              constraint _migration_id_sequence check
-                ( (id = 1 and parent is null)
-                  or id = parent+1 )
-          , up text
-              constraint _migration_up_not_null not null
-          , down text
-          , description text
-          , constraint _migration_parent_fkey
-              foreign key (parent) references _migration (id)
-          )
-      |]
-    case res of
-      Nothing  -> return ()
-      Just err -> error $ "Program error: " ++ err
 
   backendGetMigrations handle = do
     --rows <- raiseLeft $ execStatement handle

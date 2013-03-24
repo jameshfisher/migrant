@@ -23,17 +23,15 @@ mockConnect = newIORef $ MockConnection {
   }
 
 instance Backend (IORef MockConnection) MockQuery String where
-  backendStackExists conn = do
-    db <- readIORef conn
-    let stack = mockConnectionStack db
-    return $ isJust stack
-
-  backendCreateStack conn = do
+  
+  backendEnsureStack conn = do
     db <- readIORef conn
     let maybeStack = mockConnectionStack db
     case maybeStack of
-      Nothing -> writeIORef conn $ db { mockConnectionStack = Just [] }
-      Just _  -> error "MockConnection: tried to create stack when one already exists!"
+      Nothing -> do
+        writeIORef conn $ db { mockConnectionStack = Just [] }
+        return True
+      Just _  -> return False
 
   backendGetMigrations conn = do
     db <- readIORef conn

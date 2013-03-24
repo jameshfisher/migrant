@@ -36,11 +36,10 @@ interactiveIO = whenInteractive . liftIO
 ensureTableUI :: Backend b q e => Runner b q e ()
 ensureTableUI = do
   bk <- migrateSettingsBackend <$> ask
-  exists <- liftIO $ backendStackExists bk
-  unless exists $ do
-    interactiveIO $ putStr "Creating migration stack ... "
-    liftIO $ backendCreateStack bk
-    interactiveIO tick
+  created <- liftIO $ backendEnsureStack bk
+  interactiveIO $ do
+    putStr "Created migration stack."
+    tick
 
 migrateUI :: Backend b q e => (b -> m -> IO (Maybe e)) -> String -> (m -> String) -> m -> Runner b q e (Maybe e)
 migrateUI run s showMig m = do

@@ -32,10 +32,6 @@ catchSqlError act = do
     Left e  -> Just $ PostgreSqlError e
     Right _ -> Nothing
 
-data DbInt = DbInt Int
-instance FromRow DbInt where
-  fromRow = DbInt <$> field
-
 instance FromRow (Migration Query) where
   fromRow = do
     up <- field
@@ -44,33 +40,36 @@ instance FromRow (Migration Query) where
     return $ Migration (Query up) (Query <$> down) description
 
 instance Backend Connection Query PostgreSqlError where
-  backendStackExists conn = do
-    [DbInt count] <- query_ conn
+
+  backendEnsureStack conn = do
+    createStack <- query_ conn
       [sql|
-        select count(*)
+        select count(*) = 0
         from pg_tables t
         where t.schemaname = 'public'
           and t.tablename  = '_migration'
       |]
-    return $ count == 1
 
-  backendCreateStack conn = void $ execute_ conn
-    [sql|
-      create table _migration
-        ( id integer
-            constraint _migration_id_pkey primary key
-            constraint _migration_id_positive check (0 < id)
-        , parent integer
-            constraint _migration_parent_fkey references _migration(id)
-            constraint _migration_id_sequence check
-              ( (id = 1 and parent is null)
-                or id = parent+1 )
-        , up text
-            constraint _migration_up_not_null not null
-        , down text
-        , description text
-        );
-    |]
+    when createStack $ void $ execute_ conn
+      [sql|
+        create table _migration
+          ( id integer
+              constraint _migration_id_pkey primary key
+              constraint _migration_id_positive check (0 < id)
+          , parent integer
+              constraint _migration_parent_fkey references _migration(id)
+              constraint _migration_id_sequence check
+                ( (id = 1 and parent is null)
+                  or id = parent+1 )
+          , up text
+              constraint _migration_up_not_null not null
+          , down text
+          , description text
+          );
+      |]
+
+    return createStack
+
 
   backendGetMigrations conn = query_ conn
     [sql|
