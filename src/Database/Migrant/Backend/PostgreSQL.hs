@@ -51,6 +51,8 @@ instance Backend Connection Query PostgreSqlError where
 
     when createStack $ void $ execute_ conn
       [sql|
+        set client_min_messages='warning'; /* ignore annoying 'implicit index' message */
+
         create schema migrant
           create table migrant.migration
             ( id integer
