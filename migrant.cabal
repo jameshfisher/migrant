@@ -20,12 +20,15 @@ library
   build-depends:
     base,
     postgresql-simple,
+    sqlite,
     ansi-terminal,
     mtl,
-    bytestring
+    bytestring,
+    template-haskell
   exposed-modules:
     Database.Migrant,
     Database.Migrant.Backend.PostgreSQL,
+    Database.Migrant.Backend.SQLite,
     Database.Migrant.Shortcuts.PostgreSQL
   other-modules:
     Database.Migrant.Terminal
