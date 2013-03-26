@@ -32,10 +32,15 @@ ensureTableUI = do
 migrateUI :: Backend b q e => (b -> m -> IO (Maybe e)) -> m -> Runner b q e (Maybe e)
 migrateUI run m = do
   bk <- migrateSettingsBackend <$> ask
+  liftIO $ backendBeginTransaction bk
   err <- liftIO $ run bk m
   case err of
-    Nothing  -> msg MessageMigrationCommitted
-    Just err -> msg . MessageMigrationRolledBack . show $ err
+    Nothing  -> do
+      liftIO $ backendCommitTransaction bk
+      msg MessageMigrationCommitted
+    Just err -> do
+      liftIO $ backendRollbackTransaction bk
+      msg . MessageMigrationRolledBack . show $ err
   return err
 
 downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e (Maybe e)
@@ -55,9 +60,7 @@ downMigrateListUI ms = case ms of
   m:ms -> do
     err <- downMigrateUI m
     case err of
-      Just err -> do
-        msg MessageAborted
-        return $ Just err
+      Just err -> return $ Just err
       Nothing  -> downMigrateListUI ms
 
 upMigrateListUI :: Backend b q e => [Migration q] -> Runner b q e (Maybe e)

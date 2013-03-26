@@ -72,7 +72,6 @@ instance Backend Connection Query PostgreSqlError where
 
     return createStack
 
-
   backendGetMigrations conn = query_ conn
     [sql|
       select up, down, description
@@ -80,7 +79,11 @@ instance Backend Connection Query PostgreSqlError where
       order by id asc
     |]
 
-  backendDownMigrate conn mig = catchSqlError $ withTransaction conn $ void $ do
+  backendBeginTransaction = begin
+  backendCommitTransaction = commit
+  backendRollbackTransaction = rollback
+
+  backendDownMigrate conn mig = catchSqlError $ void $ do
     _ <- execute_ conn $ biMigrationDown mig
     affected <- execute conn
       [sql|
@@ -91,7 +94,7 @@ instance Backend Connection Query PostgreSqlError where
       |] (Only $ fromQuery $ biMigrationUp mig)
     when (affected /= 1) $ error "tried to down-migrate a migration that isn't the top of the stack"
 
-  backendUpMigrate conn mig = catchSqlError $ withTransaction conn $ do
+  backendUpMigrate conn mig = catchSqlError $ do
     _ <- execute_ conn $ migrationUp mig
     _ <- execute conn
       [sql|
@@ -111,4 +114,3 @@ addColumn table col ty = Migration
   ("alter table " ++ table ++ " add column " ++ col ++ " " ++ ty)
   (Just $ "alter table " ++ table ++ " drop column " ++ col)
   (Just $ "add_column_" ++ table ++ "_" ++ col)
-  

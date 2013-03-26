@@ -19,10 +19,13 @@ data BiMigration q = BiMigration
   } deriving (Show)
 
 class (Eq q, Show q, Show e) => Backend b q e | b -> q e where
-  backendEnsureStack   :: b -> IO Bool
-  backendGetMigrations :: b -> IO [Migration q]
-  backendDownMigrate   :: b -> BiMigration q -> IO (Maybe e)
-  backendUpMigrate     :: b -> Migration q -> IO (Maybe e)
+  backendEnsureStack         :: b -> IO Bool
+  backendGetMigrations       :: b -> IO [Migration q]
+  backendBeginTransaction    :: b -> IO ()
+  backendCommitTransaction   :: b -> IO ()
+  backendRollbackTransaction :: b -> IO ()
+  backendDownMigrate         :: b -> BiMigration q -> IO (Maybe e)
+  backendUpMigrate           :: b -> Migration q -> IO (Maybe e)
 
 data Message
   = MessageCreatedMigrationStack

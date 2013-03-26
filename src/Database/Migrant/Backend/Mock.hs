@@ -4,7 +4,10 @@ import Data.IORef
 
 import Database.Migrant.Data
 
-type MockState = Int
+data MockState = MockState
+  { mockRollback :: Maybe Int
+  , mockState    :: Int
+  }
 
 type MockQuery = Maybe Int -- semantics: Nothing is invalid query; (Just i) adds i to state
 
@@ -18,7 +21,7 @@ data MockConnection = MockConnection {
 mockConnect :: IO (IORef MockConnection)
 mockConnect = newIORef $ MockConnection {
   mockConnectionStack = Nothing,
-  mockConnectionState = 0
+  mockConnectionState = MockState Nothing 0
   }
 
 instance Backend (IORef MockConnection) MockQuery String where
@@ -53,9 +56,31 @@ instance Backend (IORef MockConnection) MockQuery String where
                                   else do
                                     writeIORef conn $ db {
                                       mockConnectionStack = Just ms,
-                                      mockConnectionState = (mockConnectionState db) - downValid
+                                      mockConnectionState = let state = mockConnectionState db
+                                                            in state { mockState = mockState state - downValid }
                                       }
                                     return Nothing
+
+  backendBeginTransaction conn = do
+    db <- readIORef conn
+    let MockState rollback state = mockConnectionState db
+    case rollback of
+      Just _  -> error "MockConnection: tried to begin a transaction when inside a transaction"
+      Nothing -> writeIORef conn $ db { mockConnectionState = MockState (Just state) state }
+
+  backendCommitTransaction conn = do
+    db <- readIORef conn
+    let MockState rollback state = mockConnectionState db
+    case rollback of
+      Nothing -> error "MockConnection: tried to commit a transaction when outside a transaction"
+      Just _  -> writeIORef conn $ db { mockConnectionState = MockState Nothing state }
+
+  backendRollbackTransaction conn = do
+    db <- readIORef conn
+    let MockState rollback _ = mockConnectionState db
+    case rollback of
+      Nothing -> error "MockConnection: tried to rollback a transaction when outside a transaction"
+      Just r  -> writeIORef conn $ db { mockConnectionState = MockState Nothing r }
 
   backendUpMigrate conn m@(Migration up _ _) = case up of
     Nothing -> return $ Just "MockConnection: invalid query for up-migration"
@@ -67,6 +92,7 @@ instance Backend (IORef MockConnection) MockQuery String where
         Just stack -> do
                         writeIORef conn $ db {
                           mockConnectionStack = Just (m:stack),
-                          mockConnectionState = (mockConnectionState db) + upValid
+                          mockConnectionState = let state = mockConnectionState db
+                                                in state { mockState = mockState state + upValid }
                           }
                         return Nothing
