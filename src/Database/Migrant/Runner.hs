@@ -29,11 +29,11 @@ ensureTableUI = do
   created <- liftIO $ backendEnsureStack bk
   when created $ msg MessageCreatedMigrationStack
 
-migrateUI :: Backend b q e => (b -> m -> IO (Maybe e)) -> m -> Runner b q e (Maybe e)
-migrateUI run m = do
+downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e (Maybe e)
+downMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   liftIO $ backendBeginTransaction bk
-  err <- liftIO $ run bk m
+  err <- liftIO $ backendDownMigrate bk m
   case err of
     Nothing  -> do
       liftIO $ backendCommitTransaction bk
@@ -43,21 +43,54 @@ migrateUI run m = do
       msg . MessageMigrationRolledBack . show $ err
   return err
 
-downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e (Maybe e)
-downMigrateUI m = do
-  msg . MessageMigrationStartedDown . showDownMigration $ m
-  migrateUI backendDownMigrate m
-
 upMigrateUI :: Backend b q e => Migration q -> Runner b q e (Maybe e)
 upMigrateUI m = do
-  msg . MessageMigrationStartedUp . showUpMigration $ m
-  migrateUI backendUpMigrate m
+  bk <- migrateSettingsBackend <$> ask
+  liftIO $ backendBeginTransaction bk
+  err <- liftIO $ backendUpMigrate bk m
+  case err of
+    Nothing -> do
+      liftIO $ backendCommitTransaction bk
+      msg MessageMigrationCommitted
+    Just err -> do
+      liftIO $ backendRollbackTransaction bk
+      msg . MessageMigrationRolledBack . show $ err
+  return err
+
+-- always rolls back
+testUpMigration :: Backend b q e => Migration q -> Runner b q e (Maybe e)
+testUpMigration m@(Migration up down desc) = do
+  bk <- migrateSettingsBackend <$> ask
+  case down of
+    Nothing -> do
+      msg MessageWarnNoDownMigration
+      return Nothing
+    Just down -> do
+      msg MessageTestingMigration
+      liftIO $ backendBeginTransaction bk
+      err <- liftIO $ backendUpMigrate bk m
+      case err of
+        Just err -> do
+          liftIO $ backendRollbackTransaction bk
+          msg . MessageMigrationRolledBack . show $ err
+          return $ Just err
+        Nothing -> do
+          err <- liftIO $ backendDownMigrate bk $ BiMigration up down desc
+          case err of
+            Just err -> do
+              liftIO $ backendRollbackTransaction bk
+              msg . MessageMigrationRolledBack . show $ err
+              return $ Just err
+            Nothing -> do
+              liftIO $ backendRollbackTransaction bk
+              return Nothing
 
 -- TODO downMigrateListUI and upMigrateListUI are almost the same
 downMigrateListUI :: Backend b q e => [BiMigration q] -> Runner b q e (Maybe e)
 downMigrateListUI ms = case ms of
   []   -> return Nothing
   m:ms -> do
+    msg . MessageMigrationStartedDown . showDownMigration $ m
     err <- downMigrateUI m
     case err of
       Just err -> return $ Just err
@@ -67,10 +100,16 @@ upMigrateListUI :: Backend b q e => [Migration q] -> Runner b q e (Maybe e)
 upMigrateListUI ms = case ms of
   []   -> return Nothing
   m:ms -> do
-    err <- upMigrateUI m
+    msg . MessageMigrationStartedUp . showUpMigration $ m
+    err <- testUpMigration m
     case err of
       Just err -> return $ Just err
-      Nothing  -> upMigrateListUI ms
+      Nothing  -> do
+        err <- upMigrateUI m
+        case err of
+          Just err -> return $ Just err
+          Nothing  -> do
+            upMigrateListUI ms
 
 -- TODO better return type
 runPlan :: Backend b q e => Plan q -> Runner b q e Bool

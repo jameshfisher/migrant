@@ -2,7 +2,7 @@ module Database.Migrant.Frontend.Terminal
   ( frontendTerminal
   ) where
 
-import System.Console.ANSI (setSGR, SGR(SetColor), ConsoleLayer(Foreground), ColorIntensity(Dull), Color(..))
+import System.Console.ANSI (setSGR, SGR(SetColor), ConsoleLayer(Foreground), ColorIntensity(Dull), Color(Green, Yellow, Red))
 
 import Database.Migrant.Data (Message(..))
 
@@ -14,6 +14,9 @@ withColor color action = do
 
 putSuccess :: String -> IO ()
 putSuccess s = withColor Green $ putStrLn s
+
+putWarning :: String -> IO ()
+putWarning s = withColor Yellow $ putStrLn s
 
 putError :: String -> IO ()
 putError s = withColor Red $ putStrLn s
@@ -32,7 +35,9 @@ frontendTerminal m = case m of
   MessageMigrationCommitted       -> tick
   MessageMigrationRolledBack err  -> do
     putError "✘ (rolled back)"
-    putError $ indent $ show err
+    putError $ indent err
+  MessageWarnNoDownMigration      -> putWarning "(no down-migration provided) "
+  MessageTestingMigration         -> putStr "testing migration "
   MessageMissingDownMigrations ms -> do
     putError "The following down-migrations are not provided:"
     mapM_ (putStrLn . indent) ms

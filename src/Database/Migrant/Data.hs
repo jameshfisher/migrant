@@ -33,6 +33,8 @@ data Message
   | MessageMigrationStartedDown String
   | MessageMigrationCommitted
   | MessageMigrationRolledBack String
+  | MessageWarnNoDownMigration
+  | MessageTestingMigration
   | MessageMissingDownMigrations [String]
   | MessageAborted
   | MessageCompleted Int
