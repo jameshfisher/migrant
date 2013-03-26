@@ -2,8 +2,8 @@
 module Database.Migrant.Main where
 
 import Database.PostgreSQL.Simple
-
 import Database.Migrant
+import Database.Migrant.Frontend.Terminal (frontendTerminal)
 
 main :: IO ()
 main = do
@@ -18,7 +18,7 @@ main = do
   
   let settings = MigrateSettings {
     migrateSettingsBackend = conn,
-    migrateSettingsInteractive = True
+    migrateSettingsFrontend = frontendTerminal
     }
 
   runMigrations settings

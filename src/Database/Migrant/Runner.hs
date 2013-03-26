@@ -9,13 +9,8 @@ import Control.Monad.Reader
 
 import Database.Migrant.Data
 import Database.Migrant.PlanMigration
-import Database.Migrant.Terminal
 
-tick :: IO ()
-tick = putSuccess "✔"
-
-indent :: String -> String
-indent = unlines . map ("    "++) . lines
+type Runner b q e = ReaderT (MigrateSettings b q e) IO
 
 showUpMigration :: Show q => Migration q -> String
 showUpMigration m = fromMaybe (show $ migrationUp m) $ migrationDescription m
@@ -23,41 +18,35 @@ showUpMigration m = fromMaybe (show $ migrationUp m) $ migrationDescription m
 showDownMigration :: Show q => BiMigration q -> String
 showDownMigration m = fromMaybe (show $ biMigrationDown m) $ biMigrationDescription m
 
-type Runner b q e = ReaderT (MigrateSettings b q e) IO
-
-whenInteractive :: Backend b q e => Runner b q e () -> Runner b q e ()
-whenInteractive a = do
-  interactive <- migrateSettingsInteractive <$> ask
-  when interactive a
-
-interactiveIO :: Backend b q e => IO () -> Runner b q e ()
-interactiveIO = whenInteractive . liftIO
+msg :: Backend b q e => Message -> Runner b q e ()
+msg m = do
+  f <- migrateSettingsFrontend <$> ask
+  liftIO $ f m
 
 ensureTableUI :: Backend b q e => Runner b q e ()
 ensureTableUI = do
   bk <- migrateSettingsBackend <$> ask
   created <- liftIO $ backendEnsureStack bk
-  when created $ interactiveIO $ do
-    putStr "Created migration stack "
-    tick
+  when created $ msg MessageCreatedMigrationStack
 
-migrateUI :: Backend b q e => (b -> m -> IO (Maybe e)) -> String -> (m -> String) -> m -> Runner b q e (Maybe e)
-migrateUI run s showMig m = do
+migrateUI :: Backend b q e => (b -> m -> IO (Maybe e)) -> m -> Runner b q e (Maybe e)
+migrateUI run m = do
   bk <- migrateSettingsBackend <$> ask
-  interactiveIO $ putStr $ s ++ showMig m ++ " ... "
   err <- liftIO $ run bk m
   case err of
-    Nothing  -> interactiveIO tick
-    Just err -> interactiveIO $ do
-      putError "✘ (rolled back)"
-      putError $ indent $ show err
+    Nothing  -> msg MessageMigrationCommitted
+    Just err -> msg . MessageMigrationRolledBack . show $ err
   return err
 
 downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e (Maybe e)
-downMigrateUI = migrateUI backendDownMigrate "Migrating down: " showDownMigration
+downMigrateUI m = do
+  msg . MessageMigrationStartedDown . showDownMigration $ m
+  migrateUI backendDownMigrate m
 
 upMigrateUI :: Backend b q e => Migration q -> Runner b q e (Maybe e)
-upMigrateUI = migrateUI backendUpMigrate "Migrating up: " showUpMigration
+upMigrateUI m = do
+  msg . MessageMigrationStartedUp . showUpMigration $ m
+  migrateUI backendUpMigrate m
 
 -- TODO downMigrateListUI and upMigrateListUI are almost the same
 downMigrateListUI :: Backend b q e => [BiMigration q] -> Runner b q e (Maybe e)
@@ -67,7 +56,7 @@ downMigrateListUI ms = case ms of
     err <- downMigrateUI m
     case err of
       Just err -> do
-        interactiveIO $ putError "Down-migration halted."
+        msg MessageAborted
         return $ Just err
       Nothing  -> downMigrateListUI ms
 
@@ -77,33 +66,15 @@ upMigrateListUI ms = case ms of
   m:ms -> do
     err <- upMigrateUI m
     case err of
-      Just err -> do
-        interactiveIO $ putError "Up-migration halted."
-        return $ Just err
+      Just err -> return $ Just err
       Nothing  -> upMigrateListUI ms
 
 -- TODO better return type
 runPlan :: Backend b q e => Plan q -> Runner b q e Bool
 runPlan plan = case plan of
-  AbortivePlan downs failed -> do
-    interactive <- migrateSettingsInteractive <$> ask
-    if interactive
-      then do
-        ans <- liftIO $ do
-          putError "The following down-migrations are not provided:"
-          mapM_ (putStrLn . showUpMigration)  failed
-          putStrLn "The following down-migrations can be performed:"
-          mapM_ (putStrLn . showDownMigration)  downs
-          putStrLn "Would you like to do this? [Y/n]"
-          getLine
-        if ans == "Y"
-          then do
-            liftIO $ putStrLn "Down-migrating."
-            err <- downMigrateListUI downs
-            return $ isNothing err
-          else return False
-      else
-        return False
+  AbortivePlan _ failed -> do
+    msg . MessageMissingDownMigrations . map showUpMigration $ failed
+    return False
 
   Plan downs ups -> do
     err <- downMigrateListUI downs
@@ -112,9 +83,11 @@ runPlan plan = case plan of
       Nothing -> do
         err <- upMigrateListUI ups
         case err of
-          Just _ -> return False
+          Just _ -> do
+            msg MessageAborted
+            return False
           Nothing -> do
-            interactiveIO $ putSuccess $ "Done (" ++ show (length ups + length downs) ++ " actions performed)."
+            msg . MessageCompleted $ length ups + length downs
             return True
 
 runMigrations' :: Backend b q e => [Migration q] -> Runner b q e Bool

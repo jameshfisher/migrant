@@ -2,6 +2,7 @@ module Database.Migrant.Data
   ( Migration (..)
   , BiMigration (..)
   , Backend (..)
+  , Message (..)
   , MigrateSettings (..)
   ) where
 
@@ -23,7 +24,18 @@ class (Eq q, Show q, Show e) => Backend b q e | b -> q e where
   backendDownMigrate   :: b -> BiMigration q -> IO (Maybe e)
   backendUpMigrate     :: b -> Migration q -> IO (Maybe e)
 
+data Message
+  = MessageCreatedMigrationStack
+  | MessageMigrationStartedUp String
+  | MessageMigrationStartedDown String
+  | MessageMigrationCommitted
+  | MessageMigrationRolledBack String
+  | MessageMissingDownMigrations [String]
+  | MessageAborted
+  | MessageCompleted Int
+
 data Backend b q e => MigrateSettings b q e = MigrateSettings
-  { migrateSettingsBackend     :: b
-  , migrateSettingsInteractive :: Bool
+  { migrateSettingsBackend  :: b
+  , migrateSettingsFrontend :: Message -> IO ()
   }
+

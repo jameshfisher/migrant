@@ -29,9 +29,9 @@ library
     Database.Migrant,
     Database.Migrant.Backend.PostgreSQL,
     Database.Migrant.Backend.SQLite,
+    Database.Migrant.Frontend.Terminal,
     Database.Migrant.Shortcuts.PostgreSQL
   other-modules:
-    Database.Migrant.Terminal
     Database.Migrant.Data
     Database.Migrant.PlanMigration
     Database.Migrant.Runner
