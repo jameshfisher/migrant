@@ -105,3 +105,10 @@ instance Backend Connection Query PostgreSqlError where
           (select max(id) from migrant.migration), ?, ?, ?)
       |] (fromQuery $ migrationUp mig, fromQuery <$> migrationDown mig, migrationDescription mig)
     return ()
+
+addColumn :: String -> String -> String -> Migration String
+addColumn table col ty = Migration
+  ("alter table " ++ table ++ " add column " ++ col ++ " " ++ ty)
+  (Just $ "alter table " ++ table ++ " drop column " ++ col)
+  (Just $ "add_column_" ++ table ++ "_" ++ col)
+  
