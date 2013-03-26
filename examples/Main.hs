@@ -3,6 +3,7 @@ module Database.Migrant.Main where
 
 import Database.PostgreSQL.Simple
 import Database.Migrant
+import Database.Migrant.Backend.PostgreSQL ()
 import Database.Migrant.Frontend.Terminal (frontendTerminal)
 
 main :: IO ()
