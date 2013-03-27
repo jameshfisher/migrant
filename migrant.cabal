@@ -35,6 +35,7 @@ library
     Database.Migrant.PlanMigration
     Database.Migrant.Runner
     Database.Migrant.Backend.Mock
+    Database.Migrant.Test.Backend.Mock
   ghc-options: -Wall -fno-warn-name-shadowing
   extensions:
     QuasiQuotes,
@@ -44,12 +45,29 @@ library
     FlexibleInstances,
     RecordWildCards
 
-test-suite test-postgres-migrate
+test-suite test-migrant
   type: detailed-0.9
-  test-module: Database.Migrant.Test
+  test-module: Database.Migrant.Test.CabalTest
+  other-modules:
+    Database.Migrant
+    Database.Migrant.Backend.PostgreSQL
+    Database.Migrant.Backend.SQLite
+    Database.Migrant.Frontend.Terminal
+    Database.Migrant.Data
+    Database.Migrant.PlanMigration
+    Database.Migrant.Runner
+    Database.Migrant.Backend.Mock
+    Database.Migrant.Test.Backend.Mock
   hs-source-dirs: src
   build-depends:
     base,
-    Cabal >= 1.14.0
+    Cabal >= 1.14.0,
+    HUnit
+  ghc-options: -Wall -fno-warn-name-shadowing -O0
   extensions:
-    FlexibleInstances
+    QuasiQuotes,
+    OverloadedStrings,
+    MultiParamTypeClasses,
+    FunctionalDependencies,
+    FlexibleInstances,
+    RecordWildCards

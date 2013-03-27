@@ -7,7 +7,7 @@ import Database.Migrant.Data
 data MockState = MockState
   { mockRollback :: Maybe Int
   , mockState    :: Int
-  }
+  } deriving (Eq, Show)
 
 type MockQuery = Maybe Int -- semantics: Nothing is invalid query; (Just i) adds i to state
 
@@ -16,7 +16,7 @@ type MockStack = Maybe [Migration MockQuery] -- head is latest
 data MockConnection = MockConnection {
   mockConnectionStack :: MockStack,
   mockConnectionState :: MockState
-  }
+  } deriving (Eq, Show)
 
 mockConnect :: IO (IORef MockConnection)
 mockConnect = newIORef $ MockConnection {

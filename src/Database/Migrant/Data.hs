@@ -10,13 +10,13 @@ data Migration q = Migration
   { migrationUp   :: q
   , migrationDown :: Maybe q
   , migrationDescription :: Maybe String
-  } deriving (Show)
+  } deriving (Eq, Show)
 
 data BiMigration q = BiMigration
   { biMigrationUp   :: q
   , biMigrationDown :: q
   , biMigrationDescription :: Maybe String
-  } deriving (Show)
+  } deriving (Eq, Show)
 
 class (Eq q, Show q, Show e) => Backend b q e | b -> q e where
   backendEnsureStack         :: b -> IO Bool
