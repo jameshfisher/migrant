@@ -43,4 +43,3 @@ data Backend b q e => MigrateSettings b q e = MigrateSettings
   { migrateSettingsBackend  :: b
   , migrateSettingsFrontend :: Message -> IO ()
   }
-
