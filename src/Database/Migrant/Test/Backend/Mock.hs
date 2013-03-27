@@ -1,14 +1,12 @@
 module Database.Migrant.Test.Backend.Mock where
 
 import Data.IORef
-import Test.HUnit (Test(TestCase), assertEqual)
+import qualified Test.HUnit as HUnit (assertEqual)
 
 import Database.Migrant.Backend.Mock 
 
-mockConnectExpectedState :: Test
-mockConnectExpectedState = TestCase $ do
+mockConnectExpectedState :: IO ()
+mockConnectExpectedState = do
   conn <- mockConnect
   db <- readIORef conn
-  assertEqual "" (MockConnection Nothing (MockState Nothing 0)) db
-
-tests = mockConnectExpectedState
+  HUnit.assertEqual "" (MockConnection Nothing (MockState Nothing 0)) db

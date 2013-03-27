@@ -46,8 +46,8 @@ library
     RecordWildCards
 
 test-suite test-migrant
-  type: detailed-0.9
-  test-module: Database.Migrant.Test.CabalTest
+  type: exitcode-stdio-1.0
+  main-is: Database/Migrant/Test/Main.hs
   other-modules:
     Database.Migrant
     Database.Migrant.Backend.PostgreSQL
@@ -61,8 +61,12 @@ test-suite test-migrant
   hs-source-dirs: src
   build-depends:
     base,
-    Cabal >= 1.14.0,
-    HUnit
+    Cabal,
+    HUnit,
+    QuickCheck,
+    test-framework,
+    test-framework-hunit,
+    test-framework-quickcheck2
   ghc-options: -Wall -fno-warn-name-shadowing -O0
   extensions:
     QuasiQuotes,
