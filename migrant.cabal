@@ -24,7 +24,13 @@ library
     ansi-terminal,
     mtl,
     bytestring,
-    template-haskell
+    template-haskell,
+    Cabal,
+    HUnit,
+    QuickCheck,
+    test-framework,
+    test-framework-hunit,
+    test-framework-quickcheck2
   exposed-modules:
     Database.Migrant,
     Database.Migrant.Backend.PostgreSQL,
@@ -47,7 +53,7 @@ library
 
 test-suite test-migrant
   type: exitcode-stdio-1.0
-  main-is: Database/Migrant/Test/Main.hs
+  main-is: Database/Migrant/Test/TestSuite.hs
   other-modules:
     Database.Migrant
     Database.Migrant.Backend.PostgreSQL
