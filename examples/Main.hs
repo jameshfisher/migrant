@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Migrant.Main where
+module Main where
 
 import Database.PostgreSQL.Simple
 import Database.Migrant
