@@ -10,26 +10,26 @@ import Control.Monad.Reader
 import Database.Migrant.Data
 import Database.Migrant.PlanMigration
 
-type Runner conn q e = ReaderT (MigrateSettings conn q e) IO
+type Runner conn q cond e = ReaderT (MigrateSettings conn q cond e) IO
 
-showUpMigration :: Show q => Migration q (Maybe q) -> String
+showUpMigration :: Show q => Migration q (Maybe q) c -> String
 showUpMigration m = fromMaybe (show $ migrationUp m) $ migrationDescription m
 
-showDownMigration :: Show q => Migration q q -> String
+showDownMigration :: Show q => Migration q q c -> String
 showDownMigration m = fromMaybe (show $ migrationDown m) $ migrationDescription m
 
-msg :: Backend conn q e => Message -> Runner conn q e ()
+msg :: Backend conn q cond e => Message -> Runner conn q cond e ()
 msg m = do
   f <- migrateSettingsFrontend <$> ask
   liftIO $ f m
 
-ensureTableUI :: Backend conn q e => Runner conn q e ()
+ensureTableUI :: Backend conn q cond e => Runner conn q cond e ()
 ensureTableUI = do
   bk <- migrateSettingsBackend <$> ask
   created <- liftIO $ backendEnsureStack bk
   when created $ msg MessageCreatedMigrationStack
 
-downMigrateUI :: Backend conn q e => Migration q q -> Runner conn q e (Maybe e)
+downMigrateUI :: Backend conn q cond e => Migration q q cond -> Runner conn q cond e (Maybe e)
 downMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   liftIO $ backendBeginTransaction bk
@@ -47,7 +47,7 @@ downMigrateUI m = do
       msg . MessageMigrationRolledBack . show $ err
       return $ Just err
 
-upMigrateUI :: Backend conn q e => Migration q (Maybe q) -> Runner conn q e (Maybe e)
+upMigrateUI :: Backend conn q cond e => Migration q (Maybe q) cond -> Runner conn q cond e (Maybe e)
 upMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   liftIO $ backendBeginTransaction bk
@@ -66,8 +66,8 @@ upMigrateUI m = do
       return $ Just err
 
 -- always rolls back
-testUpMigration :: Backend conn q e => Migration q (Maybe q) -> Runner conn q e (Maybe e)
-testUpMigration (Migration up down _) = do
+testUpMigration :: Backend conn q cond e => Migration q (Maybe q) cond -> Runner conn q cond e (Maybe e)
+testUpMigration (Migration up down _ _ _) = do
   bk <- migrateSettingsBackend <$> ask
   case down of
     Nothing -> do
@@ -94,7 +94,7 @@ testUpMigration (Migration up down _) = do
               return Nothing
 
 -- TODO downMigrateListUI and upMigrateListUI are almost the same
-downMigrateListUI :: Backend conn q e => [Migration q q] -> Runner conn q e (Maybe e)
+downMigrateListUI :: Backend conn q cond e => [Migration q q cond] -> Runner conn q cond e (Maybe e)
 downMigrateListUI ms = case ms of
   []   -> return Nothing
   m:ms -> do
@@ -104,7 +104,7 @@ downMigrateListUI ms = case ms of
       Just err -> return $ Just err
       Nothing  -> downMigrateListUI ms
 
-upMigrateListUI :: Backend conn q e => [Migration q (Maybe q)] -> Runner conn q e (Maybe e)
+upMigrateListUI :: Backend conn q cond e => [Migration q (Maybe q) cond] -> Runner conn q cond e (Maybe e)
 upMigrateListUI ms = case ms of
   []   -> return Nothing
   m:ms -> do
@@ -120,7 +120,7 @@ upMigrateListUI ms = case ms of
             upMigrateListUI ms
 
 -- TODO better return type
-runPlan :: Backend conn q e => Plan q -> Runner conn q e Bool
+runPlan :: Backend conn q cond e => Plan q cond -> Runner conn q cond e Bool
 runPlan plan = case plan of
   AbortivePlan _ failed -> do
     msg . MessageMissingDownMigrations . map showUpMigration $ failed
@@ -140,12 +140,12 @@ runPlan plan = case plan of
             msg . MessageCompleted $ length ups + length downs
             return True
 
-runMigrations' :: Backend conn q e => [Migration q (Maybe q)] -> Runner conn q e Bool
+runMigrations' :: Backend conn q cond e => [Migration q (Maybe q) cond] -> Runner conn q cond e Bool
 runMigrations' migs = do
   bk <- migrateSettingsBackend <$> ask
   ensureTableUI
   olds <- liftIO $ backendGetMigrations bk
   runPlan $ planMigration olds migs
 
-runMigrations :: Backend conn q e => MigrateSettings conn q e -> [Migration q (Maybe q)] -> IO Bool
+runMigrations :: Backend conn q cond e => MigrateSettings conn q cond e -> [Migration q (Maybe q) cond] -> IO Bool
 runMigrations settings migs = runReaderT (runMigrations' migs) settings

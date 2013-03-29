@@ -27,8 +27,8 @@ testGroupBackendMock =
         HUnit.assertEqual "backendEnsureStack should create a migration stack when none exists" (Just []) (mockConnectionStack db)
 
     , testCase "on initialized DB does nothing" $ do
-        let migs =  [ Migration (Just 4)    (Just $ Just (-4)) (Just "add 4")
-                    , Migration (Just (-3)) (Just $ Just 3)    (Just "subtract 3")
+        let migs =  [ Migration (Just 4)    (Just $ Just (-4)) Nothing Nothing (Just "add 4")
+                    , Migration (Just (-3)) (Just $ Just 3)    Nothing Nothing (Just "subtract 3")
                     ]
             initial = MockConnection (Just migs) (MockState Nothing 4)
         conn <- newIORef initial
@@ -39,8 +39,8 @@ testGroupBackendMock =
     ]
 
   , testCase "backendGetMigrations returns migrations" $ do
-      let migs =  [ Migration (Just 4)    (Just $ Just (-4)) (Just "add 4")
-                  , Migration (Just (-3)) (Just $ Just 3)    (Just "subtract 3")
+      let migs =  [ Migration (Just 4)    (Just $ Just (-4)) Nothing Nothing (Just "add 4")
+                  , Migration (Just (-3)) (Just $ Just 3)    Nothing Nothing (Just "subtract 3")
                   ]
           initial = MockConnection (Just migs) (MockState Nothing 4)
       conn <- newIORef initial
@@ -51,7 +51,7 @@ testGroupBackendMock =
 
   , testGroup "backendRunMigration"
     [ testCase "returns exception with invalid query" $ do
-        let initial = (MockConnection (Just [Migration (Just 4) (Just Nothing) (Just "add 4")]) (MockState Nothing 4))
+        let initial = (MockConnection (Just [Migration (Just 4) (Just Nothing) Nothing Nothing (Just "add 4")]) (MockState Nothing 4))
         conn <- newIORef initial
         res <- backendRunMigration conn Nothing
         HUnit.assertEqual "" (Just "MockConnection: invalid query") res

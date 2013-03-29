@@ -11,7 +11,9 @@ data MockState = MockState
 
 type MockQuery = Maybe Int -- semantics: Nothing is invalid query; (Just i) adds i to state
 
-type MockStack = Maybe [Migration MockQuery (Maybe MockQuery)] -- head is latest
+type MockCondition = Int -- semantics: db state has to be >= this
+
+type MockStack = Maybe [Migration MockQuery (Maybe MockQuery) MockCondition] -- head is latest
 
 data MockConnection = MockConnection {
   mockConnectionStack :: MockStack,
@@ -24,7 +26,7 @@ mockConnect = newIORef $ MockConnection {
   mockConnectionState = MockState Nothing 0
   }
 
-instance Backend (IORef MockConnection) MockQuery String where
+instance Backend (IORef MockConnection) MockQuery MockCondition String where
   
   backendEnsureStack conn = do
     db <- readIORef conn
@@ -90,3 +92,7 @@ instance Backend (IORef MockConnection) MockQuery String where
       Just stack -> case stack of
                       []   -> error "MockConnection: tried to pop migration when the stack is empty!"
                       _:ms -> writeIORef conn $ db { mockConnectionStack = Just ms }
+
+  backendTestCondition conn cond = do
+    MockConnection _ (MockState _ state) <- readIORef conn
+    return $ cond <= state

@@ -32,14 +32,16 @@ catchSqlError act = do
     Left e  -> Just $ PostgreSqlError e
     Right _ -> Nothing
 
-instance FromRow (Migration Query (Maybe Query)) where
+instance FromRow (Migration Query (Maybe Query) Query) where
   fromRow = do
     up <- field
     down <- field
+    pre <- field
+    post <- field
     description <- field
-    return $ Migration (Query up) (Query <$> down) description
+    return $ Migration (Query up) (Query <$> down) (Query <$> pre) (Query <$> post) description
 
-instance Backend Connection Query PostgreSqlError where
+instance Backend Connection Query Query PostgreSqlError where
 
   backendEnsureStack conn = do
     [[createStack]] <- query_ conn
@@ -66,6 +68,8 @@ instance Backend Connection Query PostgreSqlError where
             , up text
                 constraint migration_up_not_null not null
             , down text
+            , pre text
+            , post text
             , description text
             );
       |]
@@ -74,7 +78,7 @@ instance Backend Connection Query PostgreSqlError where
 
   backendGetMigrations conn = query_ conn
     [sql|
-      select up, down, description
+      select up, down, pre, post, description
       from migrant.migration
       order by id asc
     |]
@@ -90,15 +94,20 @@ instance Backend Connection Query PostgreSqlError where
 
   backendPushMigration conn mig = void $ execute conn
     [sql|
-      insert into migrant.migration (id, parent, up, down, description)
+      insert into migrant.migration (id, parent, up, down, pre, post, description)
       values (
         (select
           case when (select max(id) from migrant.migration) is null
           then 1
           else (select max(id) from migrant.migration)+1
           end),
-        (select max(id) from migrant.migration), ?, ?, ?)
-    |] (fromQuery $ migrationUp mig, fromQuery <$> migrationDown mig, migrationDescription mig)
+        (select max(id) from migrant.migration), ?, ?,?, ?, ?)
+    |] (
+      fromQuery $ migrationUp mig,
+      fromQuery <$> migrationDown mig,
+      fromQuery <$> migrationPre mig,
+      fromQuery <$> migrationPost mig,
+      migrationDescription mig)
 
   backendPopMigration conn = void $ execute_ conn
     [sql|
@@ -106,8 +115,14 @@ instance Backend Connection Query PostgreSqlError where
       where id = (select max(id) from migrant.migration)
     |]
 
-addColumn :: String -> String -> String -> Migration Query (Maybe Query)
+  backendTestCondition conn cond = do
+    [[pass]] <- query_ conn cond
+    return pass
+
+addColumn :: String -> String -> String -> Migration Query (Maybe Query) Query
 addColumn table col ty = Migration
   (Query . pack $ "alter table " ++ table ++ " add column " ++ col ++ " " ++ ty)
   (Just . Query . pack $ "alter table " ++ table ++ " drop column " ++ col)
+  undefined -- TODO
+  undefined -- TODO
   (Just $ "add_column_" ++ table ++ "_" ++ col)

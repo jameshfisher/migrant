@@ -23,7 +23,7 @@ class (Eq q, Show q, Eq cond, Show cond, Show e) => Backend conn q cond e | conn
   backendRunMigration        :: conn -> q -> IO (Maybe e)
   backendPushMigration       :: conn -> Migration q (Maybe q) cond -> IO ()
   backendPopMigration        :: conn -> IO ()
-  backendTestCondition       :: conn -> cond -> IO (Maybe e)
+  backendTestCondition       :: conn -> cond -> IO Bool
 
 data Message
   = MessageCreatedMigrationStack
@@ -37,7 +37,7 @@ data Message
   | MessageAborted
   | MessageCompleted Int
 
-data Backend conn q e => MigrateSettings conn q e = MigrateSettings
+data Backend conn q cond e => MigrateSettings conn q cond e = MigrateSettings
   { migrateSettingsBackend  :: conn
   , migrateSettingsFrontend :: Message -> IO ()
   }
