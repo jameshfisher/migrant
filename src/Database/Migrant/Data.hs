@@ -13,14 +13,13 @@ data Migration up down cond = Migration
   , migrationDescription :: Maybe String
   } deriving (Eq, Show)
 
--- TODO is `e` necessary? All we do is show it
-class (Eq q, Show q, Eq cond, Show cond, Show e) => Backend conn q cond e | conn -> q cond e where
+class (Eq q, Show q, Eq cond, Show cond) => Backend conn q cond | conn -> q cond where
   backendEnsureStack         :: conn -> IO Bool
   backendGetMigrations       :: conn -> IO [Migration q (Maybe q) cond]
   backendBeginTransaction    :: conn -> IO ()
   backendRollbackTransaction :: conn -> IO ()
-  backendCommitTransaction   :: conn -> IO (Maybe e)
-  backendRunMigration        :: conn -> q -> IO (Maybe e)
+  backendCommitTransaction   :: conn -> IO (Maybe String)
+  backendRunMigration        :: conn -> q -> IO (Maybe String)
   backendPushMigration       :: conn -> Migration q (Maybe q) cond -> IO ()
   backendPopMigration        :: conn -> IO ()
   backendTestCondition       :: conn -> cond -> IO Bool
@@ -32,12 +31,16 @@ data Message
   | MessageMigrationCommitted
   | MessageMigrationRolledBack String
   | MessageWarnNoDownMigration
-  | MessageTestingMigration
+  | MessageTestingDownMigration
+  | MessageWarnNoPrecondition
+  | MessageTestingPrecondition
+  | MessageWarnNoPostCondition
+  | MessageTestingPostcondition
   | MessageMissingDownMigrations [String]
   | MessageAborted
   | MessageCompleted Int
 
-data Backend conn q cond e => MigrateSettings conn q cond e = MigrateSettings
+data Backend conn q cond => MigrateSettings conn q cond = MigrateSettings
   { migrateSettingsBackend  :: conn
   , migrateSettingsFrontend :: Message -> IO ()
   }

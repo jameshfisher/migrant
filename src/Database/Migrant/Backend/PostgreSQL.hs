@@ -11,11 +11,6 @@ import Database.PostgreSQL.Simple.SqlQQ
 
 import Database.Migrant.Data
 
-newtype PostgreSqlError = PostgreSqlError SqlError
-
-instance Show PostgreSqlError where
-  show (PostgreSqlError e) = unpack $ sqlErrorMsg e
-
 catchSqlErrorEither :: IO a -> IO (Either SqlError a)
 catchSqlErrorEither act = do
   ex <- try act
@@ -25,11 +20,11 @@ catchSqlErrorEither act = do
       Just ex@(SqlError{..}) -> return $ Left ex
       Nothing                -> throwIO ex
 
-catchSqlError :: IO () -> IO (Maybe PostgreSqlError)
+catchSqlError :: IO () -> IO (Maybe String)
 catchSqlError act = do
   e <- catchSqlErrorEither act
   return $ case e of
-    Left e  -> Just $ PostgreSqlError e
+    Left e  -> Just . unpack . sqlErrorMsg $ e
     Right _ -> Nothing
 
 instance FromRow (Migration Query (Maybe Query) Query) where
@@ -41,7 +36,7 @@ instance FromRow (Migration Query (Maybe Query) Query) where
     description <- field
     return $ Migration (Query up) (Query <$> down) (Query <$> pre) (Query <$> post) description
 
-instance Backend Connection Query Query PostgreSqlError where
+instance Backend Connection Query Query where
 
   backendEnsureStack conn = do
     [[createStack]] <- query_ conn

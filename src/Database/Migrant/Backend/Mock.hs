@@ -26,7 +26,7 @@ mockConnect = newIORef $ MockConnection {
   mockConnectionState = MockState Nothing 0
   }
 
-instance Backend (IORef MockConnection) MockQuery MockCondition String where
+instance Backend (IORef MockConnection) MockQuery MockCondition where
   
   backendEnsureStack conn = do
     db <- readIORef conn

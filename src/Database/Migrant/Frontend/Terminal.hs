@@ -21,23 +21,24 @@ putWarning s = withColor Yellow $ putStrLn s
 putError :: String -> IO ()
 putError s = withColor Red $ putStrLn s
 
-tick :: IO ()
-tick = putSuccess "✔"
-
 indent :: String -> String
 indent = unlines . map ("    "++) . lines
 
 frontendTerminal :: Message -> IO ()
 frontendTerminal m = case m of
-  MessageCreatedMigrationStack    -> do { putStr "Created migration stack "; tick }
-  MessageMigrationStartedUp   mig -> putStr $ "Migrating up: "   ++ mig ++ " ... "
-  MessageMigrationStartedDown mig -> putStr $ "Migrating down: " ++ mig ++ " ... "
-  MessageMigrationCommitted       -> tick
+  MessageCreatedMigrationStack    -> putStrLn "Created migration stack."
+  MessageMigrationStartedUp   mig -> putStrLn $ "Migrating up: "   ++ mig
+  MessageMigrationStartedDown mig -> putStrLn $ "Migrating down: " ++ mig
+  MessageMigrationCommitted       -> putSuccess "    committed."
   MessageMigrationRolledBack err  -> do
-    putError "✘ (rolled back)"
+    putError "    rolled back due to error:"
     putError $ indent err
-  MessageWarnNoDownMigration      -> putWarning "(no down-migration provided) "
-  MessageTestingMigration         -> putStr "testing migration "
+  MessageWarnNoDownMigration      -> putWarning  "    no down-migration provided"
+  MessageTestingDownMigration     -> putStrLn    "    testing down-migration"
+  MessageWarnNoPrecondition       -> putWarning  "    no precondition provided"
+  MessageTestingPrecondition      -> putStrLn    "    testing precondition"
+  MessageWarnNoPostCondition      -> putWarning  "    no postcondition provided"
+  MessageTestingPostcondition     -> putStrLn    "    testing postcondition"
   MessageMissingDownMigrations ms -> do
     putError "The following down-migrations are not provided:"
     mapM_ (putStrLn . indent) ms
