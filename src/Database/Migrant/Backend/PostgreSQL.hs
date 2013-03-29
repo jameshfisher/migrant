@@ -79,7 +79,10 @@ instance Backend Connection Query PostgreSqlError where
       order by id asc
     |]
 
-  backendBeginTransaction = begin
+  backendBeginTransaction conn = do
+    begin conn
+    void $ execute_ conn "lock table migrant.migration in exclusive mode"
+
   backendRollbackTransaction = rollback
   backendCommitTransaction = catchSqlError . commit
 
