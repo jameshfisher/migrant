@@ -80,7 +80,7 @@ instance Backend Connection Query PostgreSqlError where
     |]
 
   backendBeginTransaction = begin
-  backendCommitTransaction = commit
+  backendCommitTransaction = catchSqlError . commit
   backendRollbackTransaction = rollback
 
   backendDownMigrate conn mig = catchSqlError $ void $ do

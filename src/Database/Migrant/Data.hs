@@ -22,8 +22,8 @@ class (Eq q, Show q, Show e) => Backend b q e | b -> q e where
   backendEnsureStack         :: b -> IO Bool
   backendGetMigrations       :: b -> IO [Migration q]
   backendBeginTransaction    :: b -> IO ()
-  backendCommitTransaction   :: b -> IO ()
   backendRollbackTransaction :: b -> IO ()
+  backendCommitTransaction   :: b -> IO (Maybe e)
   backendDownMigrate         :: b -> BiMigration q -> IO (Maybe e)
   backendUpMigrate           :: b -> Migration q -> IO (Maybe e)
 

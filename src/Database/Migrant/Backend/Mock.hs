@@ -54,7 +54,9 @@ instance Backend (IORef MockConnection) MockQuery String where
     let MockState rollback state = mockConnectionState db
     case rollback of
       Nothing -> error "MockConnection: tried to commit a transaction when outside a transaction"
-      Just _  -> writeIORef conn $ db { mockConnectionState = MockState Nothing state }
+      Just _  -> do
+        writeIORef conn $ db { mockConnectionState = MockState Nothing state }
+        return Nothing
 
   backendRollbackTransaction conn = do
     db <- readIORef conn
