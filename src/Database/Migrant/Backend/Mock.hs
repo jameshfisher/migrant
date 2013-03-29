@@ -11,7 +11,7 @@ data MockState = MockState
 
 type MockQuery = Maybe Int -- semantics: Nothing is invalid query; (Just i) adds i to state
 
-type MockStack = Maybe [Migration MockQuery] -- head is latest
+type MockStack = Maybe [Migration MockQuery (Maybe MockQuery)] -- head is latest
 
 data MockConnection = MockConnection {
   mockConnectionStack :: MockStack,

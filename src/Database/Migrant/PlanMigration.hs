@@ -9,8 +9,8 @@ import Data.Function
 import Database.Migrant.Data
 
 data Plan q
-  = AbortivePlan [BiMigration q] [Migration q]
-  | Plan [BiMigration q] [Migration q]
+  = AbortivePlan [Migration q q] [Migration q (Maybe q)]
+  | Plan [Migration q q] [Migration q (Maybe q)]
 
 stripPrefix :: (a -> a -> Bool) -> [a] -> [a] -> ([a], [a])
 stripPrefix eq (a:as) (b:bs) =
@@ -19,17 +19,17 @@ stripPrefix eq (a:as) (b:bs) =
   else (a:as, b:bs)
 stripPrefix _ as bs = (as, bs)
 
-collectUps :: Eq q => [Migration q] -> [Migration q]
+collectUps :: Eq q => [Migration q (Maybe q)] -> [Migration q (Maybe q)]
 collectUps = filter (isNothing . migrationDown)
 
-tryMigrateDown :: Eq q => [Migration q] -> ([BiMigration q], [Migration q])
+tryMigrateDown :: Eq q => [Migration q (Maybe q)] -> ([Migration q q], [Migration q (Maybe q)])
 tryMigrateDown [] = ([], [])
 tryMigrateDown (Migration u md descn : ms) = case md of
   Nothing  ->  ([], Migration u md descn : collectUps ms)
   Just d   ->  let (bis, ups) = tryMigrateDown ms
-              in (BiMigration u d descn : bis, ups)
+              in (Migration u d descn : bis, ups)
 
-planMigration :: Eq q => [Migration q] -> [Migration q] -> Plan q
+planMigration :: Eq q => [Migration q (Maybe q)] -> [Migration q (Maybe q)] -> Plan q
 planMigration old new =
   let
     (toReverse, toPlay) = stripPrefix ((==) `on` migrationUp) old new

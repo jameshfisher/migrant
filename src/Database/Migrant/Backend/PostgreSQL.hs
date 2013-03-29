@@ -32,7 +32,7 @@ catchSqlError act = do
     Left e  -> Just $ PostgreSqlError e
     Right _ -> Nothing
 
-instance FromRow (Migration Query) where
+instance FromRow (Migration Query (Maybe Query)) where
   fromRow = do
     up <- field
     down <- field
@@ -103,8 +103,8 @@ instance Backend Connection Query PostgreSqlError where
       where id = (select max(id) from migrant.migration)
     |]
 
-addColumn :: String -> String -> String -> Migration String
+addColumn :: String -> String -> String -> Migration Query (Maybe Query)
 addColumn table col ty = Migration
-  ("alter table " ++ table ++ " add column " ++ col ++ " " ++ ty)
-  (Just $ "alter table " ++ table ++ " drop column " ++ col)
+  (Query . pack $ "alter table " ++ table ++ " add column " ++ col ++ " " ++ ty)
+  (Just . Query . pack $ "alter table " ++ table ++ " drop column " ++ col)
   (Just $ "add_column_" ++ table ++ "_" ++ col)
