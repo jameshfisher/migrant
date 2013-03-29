@@ -53,7 +53,7 @@ library
 
 test-suite test-migrant
   type: exitcode-stdio-1.0
-  main-is: Database/Migrant/Test/TestSuite.hs
+  main-is: Database/Migrant/Test/Main.hs
   other-modules:
     Database.Migrant
     Database.Migrant.Backend.PostgreSQL
