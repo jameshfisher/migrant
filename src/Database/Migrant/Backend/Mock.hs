@@ -49,6 +49,13 @@ instance Backend (IORef MockConnection) MockQuery String where
       Just _  -> error "MockConnection: tried to begin a transaction when inside a transaction"
       Nothing -> writeIORef conn $ db { mockConnectionState = MockState (Just state) state }
 
+  backendRollbackTransaction conn = do
+    db <- readIORef conn
+    let MockState rollback _ = mockConnectionState db
+    case rollback of
+      Nothing -> error "MockConnection: tried to rollback a transaction when outside a transaction"
+      Just r  -> writeIORef conn $ db { mockConnectionState = MockState Nothing r }
+
   backendCommitTransaction conn = do
     db <- readIORef conn
     let MockState rollback state = mockConnectionState db
@@ -58,43 +65,28 @@ instance Backend (IORef MockConnection) MockQuery String where
         writeIORef conn $ db { mockConnectionState = MockState Nothing state }
         return Nothing
 
-  backendRollbackTransaction conn = do
-    db <- readIORef conn
-    let MockState rollback _ = mockConnectionState db
-    case rollback of
-      Nothing -> error "MockConnection: tried to rollback a transaction when outside a transaction"
-      Just r  -> writeIORef conn $ db { mockConnectionState = MockState Nothing r }
-
-  backendDownMigrate conn (BiMigration up down _) = case down of
-    Nothing -> return $ Just "MockConnection: invalid query for down-migration"
+  backendRunMigration conn m = case m of
+    Nothing -> return $ Just "MockConnection: invalid query"
     Just downValid -> do
       db <- readIORef conn
-      let maybeStack = mockConnectionStack db
-      case maybeStack of
-        Nothing    -> error "MockConnection: tried to down-migrate when no stack exists!"
-        Just stack -> case stack of
-                        []   -> error "MockConnection: tried to down-migrate when the stack is empty!"
-                        m:ms -> if migrationUp m /= up
-                                  then error "MockConnection: tried to down-migrate a migration that isn't the top of the stack"
-                                  else do
-                                    writeIORef conn $ db {
-                                      mockConnectionStack = Just ms,
-                                      mockConnectionState = let state = mockConnectionState db
-                                                            in state { mockState = mockState state + downValid }
-                                      }
-                                    return Nothing
+      let state = mockConnectionState db
+      writeIORef conn $ db {
+        mockConnectionState = state { mockState = mockState state + downValid }
+        }
+      return Nothing
 
-  backendUpMigrate conn m@(Migration up _ _) = case up of
-    Nothing -> return $ Just "MockConnection: invalid query for up-migration"
-    Just upValid -> do      
-      db <- readIORef conn
-      let maybeStack = mockConnectionStack db
-      case maybeStack of
-        Nothing    -> error "MockConnection: tried to up-migrate when no stack exists!"
-        Just stack -> do
-                        writeIORef conn $ db {
-                          mockConnectionStack = Just (m:stack),
-                          mockConnectionState = let state = mockConnectionState db
-                                                in state { mockState = mockState state + upValid }
-                          }
-                        return Nothing
+  backendPushMigration conn m = do
+    db <- readIORef conn
+    let maybeStack = mockConnectionStack db
+    case maybeStack of
+      Nothing    -> error "MockConnection: tried to push migration when no stack exists!"
+      Just stack -> writeIORef conn $ db { mockConnectionStack = Just (m:stack) }
+
+  backendPopMigration conn = do
+    db <- readIORef conn
+    let maybeStack = mockConnectionStack db
+    case maybeStack of
+      Nothing    -> error "MockConnection: tried to pop migration when no stack exists!"
+      Just stack -> case stack of
+                      []   -> error "MockConnection: tried to pop migration when the stack is empty!"
+                      _:ms -> writeIORef conn $ db { mockConnectionStack = Just ms }

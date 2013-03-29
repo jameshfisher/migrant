@@ -66,8 +66,9 @@ instance Backend SQLiteHandle String String where
     -- TODO
 
   backendBeginTransaction    conn = return ()
-  backendCommitTransaction   conn = return Nothing
   backendRollbackTransaction conn = return ()
+  backendCommitTransaction   conn = return Nothing
 
-  backendDownMigrate handle mig = return (Just "not implemented")
-  backendUpMigrate handle mig = return (Just "not implemented")
+  backendRunMigration = error "not implemented"
+  backendPushMigration = error "not implemented"
+  backendPopMigration = error "not implemented"

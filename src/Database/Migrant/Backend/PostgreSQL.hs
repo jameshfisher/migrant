@@ -80,34 +80,28 @@ instance Backend Connection Query PostgreSqlError where
     |]
 
   backendBeginTransaction = begin
-  backendCommitTransaction = catchSqlError . commit
   backendRollbackTransaction = rollback
+  backendCommitTransaction = catchSqlError . commit
 
-  backendDownMigrate conn mig = catchSqlError $ void $ do
-    _ <- execute_ conn $ biMigrationDown mig
-    affected <- execute conn
-      [sql|
-        delete from migrant.migration
-        where
-          id = (select max(id) from migrant.migration)
-          and up = ?
-      |] (Only $ fromQuery $ biMigrationUp mig)
-    when (affected /= 1) $ error "tried to down-migrate a migration that isn't the top of the stack"
+  backendRunMigration conn = catchSqlError . void . execute_ conn
 
-  backendUpMigrate conn mig = catchSqlError $ do
-    _ <- execute_ conn $ migrationUp mig
-    _ <- execute conn
-      [sql|
-        insert into migrant.migration (id, parent, up, down, description)
-        values (
-          (select
-            case when (select max(id) from migrant.migration) is null
-            then 1
-            else (select max(id) from migrant.migration)+1
-            end),
-          (select max(id) from migrant.migration), ?, ?, ?)
-      |] (fromQuery $ migrationUp mig, fromQuery <$> migrationDown mig, migrationDescription mig)
-    return ()
+  backendPushMigration conn mig = void $ execute conn
+    [sql|
+      insert into migrant.migration (id, parent, up, down, description)
+      values (
+        (select
+          case when (select max(id) from migrant.migration) is null
+          then 1
+          else (select max(id) from migrant.migration)+1
+          end),
+        (select max(id) from migrant.migration), ?, ?, ?)
+    |] (fromQuery $ migrationUp mig, fromQuery <$> migrationDown mig, migrationDescription mig)
+
+  backendPopMigration conn = void $ execute_ conn
+    [sql|
+      delete from migrant.migration
+      where id = (select max(id) from migrant.migration)
+    |]
 
 addColumn :: String -> String -> String -> Migration String
 addColumn table col ty = Migration

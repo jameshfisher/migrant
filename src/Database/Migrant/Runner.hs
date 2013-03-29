@@ -33,9 +33,10 @@ downMigrateUI :: Backend b q e => BiMigration q -> Runner b q e (Maybe e)
 downMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   liftIO $ backendBeginTransaction bk
-  err <- liftIO $ backendDownMigrate bk m
+  err <- liftIO $ backendRunMigration bk (biMigrationDown m)
   case err of
     Nothing -> do
+      liftIO $ backendPopMigration bk
       err <- liftIO $ backendCommitTransaction bk
       case err of
         Nothing  -> msg MessageMigrationCommitted
@@ -50,9 +51,10 @@ upMigrateUI :: Backend b q e => Migration q -> Runner b q e (Maybe e)
 upMigrateUI m = do
   bk <- migrateSettingsBackend <$> ask
   liftIO $ backendBeginTransaction bk
-  err <- liftIO $ backendUpMigrate bk m
+  err <- liftIO $ backendRunMigration bk (migrationUp m)
   case err of
     Nothing -> do
+      liftIO $ backendPushMigration bk m
       err <- liftIO $ backendCommitTransaction bk
       case err of
         Nothing  -> msg MessageMigrationCommitted
@@ -65,7 +67,7 @@ upMigrateUI m = do
 
 -- always rolls back
 testUpMigration :: Backend b q e => Migration q -> Runner b q e (Maybe e)
-testUpMigration m@(Migration up down desc) = do
+testUpMigration (Migration up down _) = do
   bk <- migrateSettingsBackend <$> ask
   case down of
     Nothing -> do
@@ -74,14 +76,14 @@ testUpMigration m@(Migration up down desc) = do
     Just down -> do
       msg MessageTestingMigration
       liftIO $ backendBeginTransaction bk
-      err <- liftIO $ backendUpMigrate bk m
+      err <- liftIO $ backendRunMigration bk up
       case err of
         Just err -> do
           liftIO $ backendRollbackTransaction bk
           msg . MessageMigrationRolledBack . show $ err
           return $ Just err
         Nothing -> do
-          err <- liftIO $ backendDownMigrate bk $ BiMigration up down desc
+          err <- liftIO $ backendRunMigration bk down
           case err of
             Just err -> do
               liftIO $ backendRollbackTransaction bk

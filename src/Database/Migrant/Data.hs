@@ -18,14 +18,16 @@ data BiMigration q = BiMigration
   , biMigrationDescription :: Maybe String
   } deriving (Eq, Show)
 
+-- TODO is `e` necessary? All we do is show it
 class (Eq q, Show q, Show e) => Backend b q e | b -> q e where
   backendEnsureStack         :: b -> IO Bool
   backendGetMigrations       :: b -> IO [Migration q]
   backendBeginTransaction    :: b -> IO ()
   backendRollbackTransaction :: b -> IO ()
   backendCommitTransaction   :: b -> IO (Maybe e)
-  backendDownMigrate         :: b -> BiMigration q -> IO (Maybe e)
-  backendUpMigrate           :: b -> Migration q -> IO (Maybe e)
+  backendRunMigration        :: b -> q -> IO (Maybe e)
+  backendPushMigration       :: b -> Migration q -> IO ()
+  backendPopMigration        :: b -> IO ()
 
 data Message
   = MessageCreatedMigrationStack

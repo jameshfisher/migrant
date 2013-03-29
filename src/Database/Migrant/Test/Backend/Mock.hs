@@ -49,37 +49,20 @@ testGroupBackendMock =
       db <- readIORef conn
       HUnit.assertEqual "backendGetMigrations does not change state" initial db
 
-  , testGroup "backendDownMigrate"
-    [ testCase "returns exception with invalid down-migration" $ do
+  , testGroup "backendRunMigration"
+    [ testCase "returns exception with invalid query" $ do
         let initial = (MockConnection (Just [Migration (Just 4) (Just Nothing) (Just "add 4")]) (MockState Nothing 4))
         conn <- newIORef initial
-        res <- backendDownMigrate conn $ BiMigration (Just 4) Nothing (Just "add 4")
-        HUnit.assertEqual "" (Just "MockConnection: invalid query for down-migration") res
+        res <- backendRunMigration conn Nothing
+        HUnit.assertEqual "" (Just "MockConnection: invalid query") res
         db <- readIORef conn
         HUnit.assertEqual "" initial db
 
-    , testCase "runs valid down-migration" $ do
-        conn <- newIORef (MockConnection (Just [Migration (Just 4) (Just (Just (-4))) (Just "add 4")]) (MockState Nothing 4))
-        res <- backendDownMigrate conn $ BiMigration (Just 4) (Just (-4)) (Just "add 4")
-        HUnit.assertEqual "" Nothing res
-        db <- readIORef conn
-        HUnit.assertEqual "" (MockConnection (Just []) (MockState Nothing 0)) db
-    ]
-
-  , testGroup "backendUpMigrate"
-    [ testCase "returns exception with invalid up-migration" $ do
-        let initial = (MockConnection (Just []) (MockState Nothing 0))
-        conn <- newIORef initial
-        res <- backendUpMigrate conn $ Migration Nothing Nothing (Just "add 4")
-        HUnit.assertEqual "" (Just "MockConnection: invalid query for up-migration") res
-        db <- readIORef conn
-        HUnit.assertEqual "" initial db
-
-    , testCase "runs valid up-migration" $ do
+    , testCase "runs valid query" $ do
         conn <- newIORef (MockConnection (Just []) (MockState Nothing 0))
-        res <- backendUpMigrate conn $ Migration (Just 4) (Just (Just (-4))) (Just "add 4")
+        res <- backendRunMigration conn $ Just 4
         HUnit.assertEqual "" Nothing res
         db <- readIORef conn
-        HUnit.assertEqual "" (MockConnection (Just [Migration (Just 4) (Just (Just (-4))) (Just "add 4")]) (MockState Nothing 4)) db
+        HUnit.assertEqual "" (MockConnection (Just []) (MockState Nothing 4)) db
     ]
   ]
