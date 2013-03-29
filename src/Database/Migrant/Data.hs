@@ -5,22 +5,25 @@ module Database.Migrant.Data
   , MigrateSettings (..)
   ) where
 
-data Migration up down = Migration
+data Migration up down cond = Migration
   { migrationUp   :: up
   , migrationDown :: down
+  , migrationPre  :: Maybe cond
+  , migrationPost :: Maybe cond
   , migrationDescription :: Maybe String
   } deriving (Eq, Show)
 
 -- TODO is `e` necessary? All we do is show it
-class (Eq q, Show q, Show e) => Backend b q e | b -> q e where
-  backendEnsureStack         :: b -> IO Bool
-  backendGetMigrations       :: b -> IO [Migration q (Maybe q)]
-  backendBeginTransaction    :: b -> IO ()
-  backendRollbackTransaction :: b -> IO ()
-  backendCommitTransaction   :: b -> IO (Maybe e)
-  backendRunMigration        :: b -> q -> IO (Maybe e)
-  backendPushMigration       :: b -> Migration q (Maybe q) -> IO ()
-  backendPopMigration        :: b -> IO ()
+class (Eq q, Show q, Eq cond, Show cond, Show e) => Backend conn q cond e | conn -> q cond e where
+  backendEnsureStack         :: conn -> IO Bool
+  backendGetMigrations       :: conn -> IO [Migration q (Maybe q) cond]
+  backendBeginTransaction    :: conn -> IO ()
+  backendRollbackTransaction :: conn -> IO ()
+  backendCommitTransaction   :: conn -> IO (Maybe e)
+  backendRunMigration        :: conn -> q -> IO (Maybe e)
+  backendPushMigration       :: conn -> Migration q (Maybe q) cond -> IO ()
+  backendPopMigration        :: conn -> IO ()
+  backendTestCondition       :: conn -> cond -> IO (Maybe e)
 
 data Message
   = MessageCreatedMigrationStack
@@ -34,7 +37,7 @@ data Message
   | MessageAborted
   | MessageCompleted Int
 
-data Backend b q e => MigrateSettings b q e = MigrateSettings
-  { migrateSettingsBackend  :: b
+data Backend conn q e => MigrateSettings conn q e = MigrateSettings
+  { migrateSettingsBackend  :: conn
   , migrateSettingsFrontend :: Message -> IO ()
   }
