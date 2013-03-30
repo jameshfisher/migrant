@@ -1,4 +1,6 @@
-module Database.Migrant.Backend.PostgreSQL where
+module Database.Migrant.Backend.PostgreSQL
+  ( addColumn
+  ) where
 
 import Control.Applicative
 import Control.Monad
@@ -114,10 +116,10 @@ instance Backend Connection Query Query where
     [[pass]] <- query_ conn cond
     return pass
 
-addColumn :: String -> String -> String -> Migration Query (Maybe Query) Query
-addColumn table col ty = Migration
-  (Query . pack $ "alter table " ++ table ++ " add column " ++ col ++ " " ++ ty)
-  (Just . Query . pack $ "alter table " ++ table ++ " drop column " ++ col)
-  undefined -- TODO
-  undefined -- TODO
-  (Just $ "add_column_" ++ table ++ "_" ++ col)
+addColumn :: String -> String -> String -> String -> Migration Query (Maybe Query) Query
+addColumn schema table col ty = Migration
+  (Query . pack $ "alter table " ++ schema ++ "." ++ table ++ " add column " ++ col ++ " " ++ ty)
+  (Just . Query . pack $ "alter table " ++ schema ++ "." ++ table ++ " drop column " ++ col)
+  (Just . Query . pack $ "select count(*) = 0 from information_schema.columns where table_schema='" ++ schema ++ "' and table_name ='" ++ table ++ "' and column_name = '" ++ col ++ "'")
+  (Just . Query . pack $ "select count(*) = 1 from information_schema.columns where table_schema='" ++ schema ++ "' and table_name ='" ++ table ++ "' and column_name = '" ++ col ++ "'")
+  (Just $ "add column " ++ schema ++ "." ++ table ++ "." ++ col)

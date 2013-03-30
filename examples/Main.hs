@@ -3,7 +3,7 @@ module Main where
 
 import Database.PostgreSQL.Simple
 import Database.Migrant
-import Database.Migrant.Backend.PostgreSQL ()
+import Database.Migrant.Backend.PostgreSQL (addColumn)
 import Database.Migrant.Frontend.Terminal (frontendTerminal)
 
 main :: IO ()
@@ -31,6 +31,7 @@ main = do
         (Just "select count(*) = 0 from information_schema.columns where table_name ='foo' and column_name = 'q'")
         (Just "select count(*) = 1 from information_schema.columns where table_name ='foo' and column_name = 'q'")
         (Just "add column foo.q")
+    , addColumn "public" "foo" "qux" "text"
     ]
 
   return ()
