@@ -1,5 +1,6 @@
 module Database.Migrant.Types.Migration
   ( Migration (..)
+  , defaultMigration
   ) where
 
 data Migration up down cond = Migration
@@ -9,3 +10,12 @@ data Migration up down cond = Migration
   , migrationPost :: Maybe cond
   , migrationDescription :: Maybe String
   } deriving (Eq, Show)
+
+defaultMigration :: u -> Migration u (Maybe d) c
+defaultMigration up = Migration
+  { migrationUp = up
+  , migrationDown = Nothing
+  , migrationPre = Nothing
+  , migrationPost = Nothing
+  , migrationDescription = Nothing
+  }

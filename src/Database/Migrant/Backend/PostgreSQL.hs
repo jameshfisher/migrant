@@ -99,7 +99,7 @@ instance Backend Connection Query Query where
           then 1
           else (select max(id) from migrant.migration)+1
           end),
-        (select max(id) from migrant.migration), ?, ?,?, ?, ?)
+        (select max(id) from migrant.migration), ?, ?, ?, ?, ?)
     |] (
       fromQuery $ migrationUp mig,
       fromQuery <$> migrationDown mig,

@@ -23,14 +23,19 @@ main = do
     }
 
   runMigrations settings
-    [ Migration "create table foo (bar integer)"   (Just "drop table foo")              Nothing Nothing (Just "first")
-    , Migration "insert into foo (bar) values (1)" (Just "delete from foo where bar=1") Nothing Nothing Nothing
-    , Migration
-        "alter table foo add column q integer"
-        (Just "alter table foo drop column q")
-        (Just "select count(*) = 0 from information_schema.columns where table_name ='foo' and column_name = 'q'")
-        (Just "select count(*) = 1 from information_schema.columns where table_name ='foo' and column_name = 'q'")
-        (Just "add column foo.q")
+    [ (defaultMigration "create table foo (bar integer)")
+      { migrationDown        = Just "drop table foo"
+      , migrationDescription = Just "first"
+      }
+    , (defaultMigration "insert into foo (bar) values (1)")
+      { migrationDown        = Just "delete from foo where bar=1"
+      }
+    , (defaultMigration "alter table foo add column q integer")
+      { migrationDown        = Just "alter table foo drop column q"
+      , migrationPre         = Just "select count(*) = 0 from information_schema.columns where table_name ='foo' and column_name = 'q'"
+      , migrationPost        = Just "select count(*) = 1 from information_schema.columns where table_name ='foo' and column_name = 'q'"
+      , migrationDescription = Just "add column foo.q"
+      }
     , addColumn "public" "foo" "qux" "text"
     ]
 
