@@ -52,8 +52,7 @@ testMaybeCondition ifAbsent ifPresent cond next = case cond of
       then next
       else do
         liftIO $ backendRollbackTransaction conn
-        msg . MessageMigrationRolledBack $ "precondition failed"
-        return $ Just "precondition failed"
+        return $ Just "condition failed"
 
 testPrecondition :: Backend conn query cond => Maybe cond -> Runner conn query cond (Maybe String) -> Runner conn query cond (Maybe String)
 testPrecondition  = testMaybeCondition MessageWarnNoPrecondition  MessageTestingPrecondition
@@ -68,7 +67,6 @@ runMigration query next = do
   case err of
     Just err -> do
       liftIO $ backendRollbackTransaction conn
-      msg . MessageMigrationRolledBack . show $ err
       return $ Just err
     Nothing -> next
 
@@ -79,13 +77,13 @@ transact action = do
   err <- action
   case err of
     Just err -> do
-      msg . MessageMigrationRolledBack . show $ err
+      msg . MessageMigrationRolledBack $ err
       return $ Just err
     Nothing -> do
       err <- liftIO $ backendCommitTransaction conn
       case err of
         Nothing  -> msg MessageMigrationCommitted
-        Just err -> msg . MessageMigrationRolledBack . show $ err
+        Just err -> msg . MessageMigrationRolledBack $ err
       return err
 
 downMigrateUI :: Backend conn query cond => Migration query query cond -> Runner conn query cond (Maybe String)
