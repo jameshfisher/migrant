@@ -11,7 +11,8 @@ import Database.PostgreSQL.Simple.Types
 import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.SqlQQ
 
-import Database.Migrant.Data
+import Database.Migrant.Types.Migration (Migration (..))
+import Database.Migrant.Types.Backend (Backend (..))
 
 catchSqlErrorEither :: IO a -> IO (Either SqlError a)
 catchSqlErrorEither act = do

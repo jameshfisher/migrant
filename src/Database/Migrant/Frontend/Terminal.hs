@@ -4,7 +4,7 @@ module Database.Migrant.Frontend.Terminal
 
 import System.Console.ANSI (setSGR, SGR(SetColor), ConsoleLayer(Foreground), ColorIntensity(Dull), Color(Green, Yellow, Red))
 
-import Database.Migrant.Data (Message(..))
+import Database.Migrant.Types.Message (Message(..))
 
 withColor :: Color -> IO () -> IO ()
 withColor color action = do

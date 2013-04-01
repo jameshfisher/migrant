@@ -10,7 +10,7 @@ import Test.Framework.Providers.HUnit (testCase)
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.SqlQQ
 
-import Database.Migrant.Data
+import Database.Migrant.Types.Backend (Backend (..))
 import Database.Migrant.Backend.PostgreSQL ()
 
 testConnect :: IO Connection

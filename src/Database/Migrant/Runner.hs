@@ -7,7 +7,11 @@ import Control.Applicative ((<$>))
 import Control.Monad
 import Control.Monad.Reader
 
-import Database.Migrant.Data
+import Database.Migrant.Types.Migration (Migration (..))
+import Database.Migrant.Types.Backend (Backend (..))
+import Database.Migrant.Types.Message (Message (..))
+import Database.Migrant.Types.MigrateSettings (MigrateSettings (..))
+
 import Database.Migrant.PlanMigration
 
 type Runner conn query cond = ReaderT (MigrateSettings conn query cond) IO

@@ -2,7 +2,8 @@ module Database.Migrant.Backend.Mock where
 
 import Data.IORef
 
-import Database.Migrant.Data
+import Database.Migrant.Types.Migration (Migration (..))
+import Database.Migrant.Types.Backend (Backend (..))
 
 data MockState = MockState
   { mockRollback :: Maybe Int

@@ -5,7 +5,7 @@ import MultiLineString
 import Control.Monad
 import Database.SQLite
 
-import Database.Migrant.Data
+import Database.Migrant.Types.Backend (Backend (..))
 
 raiseLeft :: IO (Either String a) -> IO a
 raiseLeft act = do

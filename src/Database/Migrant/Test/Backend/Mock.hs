@@ -5,7 +5,9 @@ import qualified Test.HUnit as HUnit (assertEqual)
 import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 
-import Database.Migrant.Data
+import Database.Migrant.Types.Migration (Migration (..))
+import Database.Migrant.Types.Backend (Backend (..))
+
 import Database.Migrant.Backend.Mock
 
 testGroupBackendMock :: [Test]

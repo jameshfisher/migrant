@@ -6,7 +6,7 @@ module Database.Migrant.PlanMigration
 import Data.Maybe
 import Data.Function
 
-import Database.Migrant.Data
+import Database.Migrant.Types.Migration (Migration(..))
 
 data Plan q c
   = AbortivePlan [Migration q q c] [Migration q (Maybe q) c]

@@ -37,7 +37,10 @@ library
     Database.Migrant.Backend.SQLite,
     Database.Migrant.Frontend.Terminal
   other-modules:
-    Database.Migrant.Data
+    Database.Migrant.Types.Migration
+    Database.Migrant.Types.Backend
+    Database.Migrant.Types.Message
+    Database.Migrant.Types.MigrateSettings
     Database.Migrant.PlanMigration
     Database.Migrant.Runner
     Database.Migrant.Backend.Mock
@@ -59,7 +62,10 @@ test-suite test-migrant
     Database.Migrant.Backend.PostgreSQL
     Database.Migrant.Backend.SQLite
     Database.Migrant.Frontend.Terminal
-    Database.Migrant.Data
+    Database.Migrant.Types.Migration
+    Database.Migrant.Types.Backend
+    Database.Migrant.Types.Message
+    Database.Migrant.Types.MigrateSettings
     Database.Migrant.PlanMigration
     Database.Migrant.Runner
     Database.Migrant.Backend.Mock
