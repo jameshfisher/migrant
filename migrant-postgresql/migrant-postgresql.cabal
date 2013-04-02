@@ -1,4 +1,4 @@
-name: migrant
+name: migrant-postgresql
 version: 0.0.1
 synopsis: Database migration
 description: Database migration
@@ -20,70 +20,40 @@ library
   build-depends:
     base,
     postgresql-simple,
-    sqlite,
-    ansi-terminal,
-    mtl,
     bytestring,
-    template-haskell,
     Cabal,
     HUnit,
-    QuickCheck,
     test-framework,
     test-framework-hunit,
-    test-framework-quickcheck2
+    migrant
   exposed-modules:
-    Database.Migrant,
-    Database.Migrant.Backend.PostgreSQL,
-    Database.Migrant.Backend.SQLite,
-    Database.Migrant.Frontend.Terminal
+    Database.Migrant.Backend.PostgreSQL
   other-modules:
-    Database.Migrant.Types.Migration
-    Database.Migrant.Types.Backend
-    Database.Migrant.Types.Message
-    Database.Migrant.Types.MigrateSettings
-    Database.Migrant.PlanMigration
-    Database.Migrant.Runner
-    Database.Migrant.Backend.Mock
-    Database.Migrant.Test.Backend.Mock
   ghc-options: -Wall -fno-warn-name-shadowing
   extensions:
     QuasiQuotes,
     OverloadedStrings,
     MultiParamTypeClasses,
-    FunctionalDependencies,
     FlexibleInstances,
     RecordWildCards
 
-test-suite test-migrant
+test-suite test-migrant-postgresql
   type: exitcode-stdio-1.0
   main-is: Database/Migrant/Test/Main.hs
   other-modules:
-    Database.Migrant
     Database.Migrant.Backend.PostgreSQL
-    Database.Migrant.Backend.SQLite
-    Database.Migrant.Frontend.Terminal
-    Database.Migrant.Types.Migration
-    Database.Migrant.Types.Backend
-    Database.Migrant.Types.Message
-    Database.Migrant.Types.MigrateSettings
-    Database.Migrant.PlanMigration
-    Database.Migrant.Runner
-    Database.Migrant.Backend.Mock
-    Database.Migrant.Test.Backend.Mock
   hs-source-dirs: src
   build-depends:
     base,
     Cabal,
     HUnit,
-    QuickCheck,
     test-framework,
     test-framework-hunit,
-    test-framework-quickcheck2
+    migrant
   ghc-options: -Wall -fno-warn-name-shadowing -O0
   extensions:
     QuasiQuotes,
     OverloadedStrings,
     MultiParamTypeClasses,
-    FunctionalDependencies,
     FlexibleInstances,
     RecordWildCards

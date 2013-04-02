@@ -1,0 +1,86 @@
+name: migrant
+version: 0.0.1
+synopsis: Database migration
+description: Database migration
+license: LGPL-3
+license-file: LICENSE.txt
+author: James Harrison Fisher <jameshfisher@gmail.com>
+maintainer: James Harrison Fisher <jameshfisher@gmail.com>
+copyright: (c) 2013 James Harrison Fisher <jameshfisher@gmail.com>
+category: Database
+build-type: Simple
+cabal-version: >= 1.6
+
+source-repository head
+  type: git
+  location: https://bitbucket.org/eegg/migrant
+
+library
+  hs-source-dirs: src
+  build-depends:
+    base,
+    sqlite,
+    ansi-terminal,
+    mtl,
+    bytestring,
+    template-haskell,
+    Cabal,
+    HUnit,
+    QuickCheck,
+    test-framework,
+    test-framework-hunit,
+    test-framework-quickcheck2
+  exposed-modules:
+    Database.Migrant
+    Database.Migrant.Backend.SQLite
+    Database.Migrant.Frontend.Terminal
+    Database.Migrant.Types.Migration
+    Database.Migrant.Types.Backend
+    Database.Migrant.Types.Message
+    Database.Migrant.Types.MigrateSettings
+  other-modules:
+    Database.Migrant.PlanMigration
+    Database.Migrant.Runner
+    Database.Migrant.Backend.Mock
+    Database.Migrant.Test.Backend.Mock
+  ghc-options: -Wall -fno-warn-name-shadowing
+  extensions:
+    QuasiQuotes,
+    OverloadedStrings,
+    MultiParamTypeClasses,
+    FunctionalDependencies,
+    FlexibleInstances,
+    RecordWildCards
+
+test-suite test-migrant
+  type: exitcode-stdio-1.0
+  main-is: Database/Migrant/Test/Main.hs
+  other-modules:
+    Database.Migrant
+    Database.Migrant.Backend.SQLite
+    Database.Migrant.Frontend.Terminal
+    Database.Migrant.Types.Migration
+    Database.Migrant.Types.Backend
+    Database.Migrant.Types.Message
+    Database.Migrant.Types.MigrateSettings
+    Database.Migrant.PlanMigration
+    Database.Migrant.Runner
+    Database.Migrant.Backend.Mock
+    Database.Migrant.Test.Backend.Mock
+  hs-source-dirs: src
+  build-depends:
+    base,
+    Cabal,
+    HUnit,
+    QuickCheck,
+    test-framework,
+    test-framework-hunit,
+    test-framework-quickcheck2
+  ghc-options: -Wall -fno-warn-name-shadowing -O0
+  extensions:
+    QuasiQuotes,
+    OverloadedStrings,
+    MultiParamTypeClasses,
+    FunctionalDependencies,
+    FlexibleInstances,
+    RecordWildCards
