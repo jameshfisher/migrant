@@ -5,7 +5,7 @@ module Database.Migrant.Types.MigrateSettings
 import Database.Migrant.Types.Backend
 import Database.Migrant.Types.Message
 
-data Backend conn q cond => MigrateSettings conn q cond = MigrateSettings
+data Backend conn q cond m => MigrateSettings conn q cond m = MigrateSettings
   { migrateSettingsBackend  :: conn
-  , migrateSettingsFrontend :: Message -> IO ()
+  , migrateSettingsFrontend :: Message -> m ()
   }

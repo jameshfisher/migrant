@@ -39,7 +39,7 @@ instance FromRow (Migration Query (Maybe Query) Query) where
     description <- field
     return $ Migration (Query up) (Query <$> down) (Query <$> pre) (Query <$> post) description
 
-instance Backend Connection Query Query where
+instance Backend Connection Query Query IO where
 
   backendEnsureStack conn = do
     [[createStack]] <- query_ conn

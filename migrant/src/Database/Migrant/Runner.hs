@@ -14,7 +14,7 @@ import Database.Migrant.Types.MigrateSettings (MigrateSettings (..))
 
 import Database.Migrant.PlanMigration
 
-type Runner conn query cond = ReaderT (MigrateSettings conn query cond) IO
+type Runner conn query cond m = ReaderT (MigrateSettings conn query cond m) m
 
 showUpMigration :: Show query => Migration query (Maybe query) cond -> String
 showUpMigration m = fromMaybe (show $ migrationUp m) $ migrationDescription m
@@ -22,24 +22,24 @@ showUpMigration m = fromMaybe (show $ migrationUp m) $ migrationDescription m
 showDownMigration :: Show query => Migration query query cond -> String
 showDownMigration m = fromMaybe (show $ migrationDown m) $ migrationDescription m
 
-msg :: Backend conn query cond => Message -> Runner conn query cond ()
+msg :: Backend conn query cond m => Message -> Runner conn query cond m ()
 msg m = do
   f <- migrateSettingsFrontend <$> ask
-  liftIO $ f m
+  lift $ f m
 
-ensureTableUI :: Backend conn query cond => Runner conn query cond ()
+ensureTableUI :: Backend conn query cond m => Runner conn query cond m ()
 ensureTableUI = do
   conn <- migrateSettingsBackend <$> ask
-  created <- liftIO $ backendEnsureStack conn
+  created <- lift $ backendEnsureStack conn
   when created $ msg MessageCreatedMigrationStack
 
 testMaybeCondition ::
-  Backend conn query cond =>
+  Backend conn query cond m =>
   Message ->
   Message ->
   Maybe cond ->
-  Runner conn query cond (Maybe String) ->
-  Runner conn query cond (Maybe String)
+  Runner conn query cond m (Maybe String) ->
+  Runner conn query cond m (Maybe String)
 testMaybeCondition ifAbsent ifPresent cond next = case cond of
   Nothing -> do
     msg ifAbsent
@@ -47,55 +47,55 @@ testMaybeCondition ifAbsent ifPresent cond next = case cond of
   Just cond -> do
     msg ifPresent
     conn <- migrateSettingsBackend <$> ask
-    pass <- liftIO $ backendTestCondition conn cond
+    pass <- lift $ backendTestCondition conn cond
     if pass
       then next
       else do
-        liftIO $ backendRollbackTransaction conn
+        lift $ backendRollbackTransaction conn
         return $ Just "condition failed"
 
-testPrecondition :: Backend conn query cond => Maybe cond -> Runner conn query cond (Maybe String) -> Runner conn query cond (Maybe String)
+testPrecondition :: Backend conn query cond m => Maybe cond -> Runner conn query cond m (Maybe String) -> Runner conn query cond m (Maybe String)
 testPrecondition  = testMaybeCondition MessageWarnNoPrecondition  MessageTestingPrecondition
 
-testPostcondition :: Backend conn query cond => Maybe cond -> Runner conn query cond (Maybe String) -> Runner conn query cond (Maybe String)
+testPostcondition :: Backend conn query cond m => Maybe cond -> Runner conn query cond m (Maybe String) -> Runner conn query cond m (Maybe String)
 testPostcondition = testMaybeCondition MessageWarnNoPostCondition MessageTestingPostcondition
 
-runMigration :: Backend conn query cond => query -> Runner conn query cond (Maybe String) -> Runner conn query cond (Maybe String)
+runMigration :: Backend conn query cond m => query -> Runner conn query cond m (Maybe String) -> Runner conn query cond m (Maybe String)
 runMigration query next = do
   conn <- migrateSettingsBackend <$> ask
-  err <- liftIO $ backendRunMigration conn query
+  err <- lift $ backendRunMigration conn query
   case err of
     Just err -> do
-      liftIO $ backendRollbackTransaction conn
+      lift $ backendRollbackTransaction conn
       return $ Just err
     Nothing -> next
 
-transact :: Backend conn query cond => Runner conn query cond (Maybe String) -> Runner conn query cond (Maybe String)
+transact :: Backend conn query cond m => Runner conn query cond m (Maybe String) -> Runner conn query cond m (Maybe String)
 transact action = do
   conn <- migrateSettingsBackend <$> ask
-  liftIO $ backendBeginTransaction conn
+  lift $ backendBeginTransaction conn
   err <- action
   case err of
     Just err -> do
       msg . MessageMigrationRolledBack $ err
       return $ Just err
     Nothing -> do
-      err <- liftIO $ backendCommitTransaction conn
+      err <- lift $ backendCommitTransaction conn
       case err of
         Nothing  -> msg MessageMigrationCommitted
         Just err -> msg . MessageMigrationRolledBack $ err
       return err
 
-downMigrateUI :: Backend conn query cond => Migration query query cond -> Runner conn query cond (Maybe String)
+downMigrateUI :: Backend conn query cond m => Migration query query cond -> Runner conn query cond m (Maybe String)
 downMigrateUI m = transact $
   testPostcondition (migrationPost m) $
     runMigration (migrationDown m) $
       testPrecondition (migrationPre m) $ do
         conn <- migrateSettingsBackend <$> ask
-        liftIO $ backendPopMigration conn
+        lift $ backendPopMigration conn
         return Nothing
 
-upMigrateUI :: Backend conn query cond => Migration query (Maybe query) cond -> Runner conn query cond (Maybe String)
+upMigrateUI :: Backend conn query cond m => Migration query (Maybe query) cond -> Runner conn query cond m (Maybe String)
 upMigrateUI m = transact $
   testPrecondition (migrationPre m) $
     runMigration (migrationUp m) $
@@ -104,7 +104,7 @@ upMigrateUI m = transact $
           Nothing -> do
             msg MessageWarnNoDownMigration
             conn <- migrateSettingsBackend <$> ask
-            liftIO $ backendPushMigration conn m
+            lift $ backendPushMigration conn m
             return Nothing
           Just down -> do
             msg MessageTestingDownMigration
@@ -113,11 +113,11 @@ upMigrateUI m = transact $
                 runMigration (migrationUp m) $
                   testPostcondition (migrationPost m) $ do
                     conn <- migrateSettingsBackend <$> ask
-                    liftIO $ backendPushMigration conn m
+                    lift $ backendPushMigration conn m
                     return Nothing
 
 -- TODO downMigrateListUI and upMigrateListUI are almost the same
-downMigrateListUI :: Backend conn query cond => [Migration query query cond] -> Runner conn query cond (Maybe String)
+downMigrateListUI :: Backend conn query cond m => [Migration query query cond] -> Runner conn query cond m (Maybe String)
 downMigrateListUI ms = case ms of
   []   -> return Nothing
   m:ms -> do
@@ -127,7 +127,7 @@ downMigrateListUI ms = case ms of
       Just err -> return $ Just err
       Nothing  -> downMigrateListUI ms
 
-upMigrateListUI :: Backend conn query cond => [Migration query (Maybe query) cond] -> Runner conn query cond (Maybe String)
+upMigrateListUI :: Backend conn query cond m => [Migration query (Maybe query) cond] -> Runner conn query cond m (Maybe String)
 upMigrateListUI ms = case ms of
   []   -> return Nothing
   m:ms -> do
@@ -138,7 +138,7 @@ upMigrateListUI ms = case ms of
       Nothing  -> upMigrateListUI ms
 
 -- TODO better return type
-runPlan :: Backend conn query cond => Plan query cond -> Runner conn query cond Bool
+runPlan :: Backend conn query cond m => Plan query cond -> Runner conn query cond m Bool
 runPlan plan = case plan of
   AbortivePlan _ failed -> do
     msg . MessageMissingDownMigrations . map showUpMigration $ failed
@@ -158,12 +158,12 @@ runPlan plan = case plan of
             msg . MessageCompleted $ length ups + length downs
             return True
 
-runMigrations' :: Backend conn query cond => [Migration query (Maybe query) cond] -> Runner conn query cond Bool
+runMigrations' :: Backend conn query cond m => [Migration query (Maybe query) cond] -> Runner conn query cond m Bool
 runMigrations' migs = do
   conn <- migrateSettingsBackend <$> ask
   ensureTableUI
-  olds <- liftIO $ backendGetMigrations conn
+  olds <- lift $ backendGetMigrations conn
   runPlan $ planMigration olds migs
 
-runMigrations :: Backend conn query cond => MigrateSettings conn query cond -> [Migration query (Maybe query) cond] -> IO Bool
+runMigrations :: Backend conn query cond m => MigrateSettings conn query cond m -> [Migration query (Maybe query) cond] -> m Bool
 runMigrations settings migs = runReaderT (runMigrations' migs) settings
