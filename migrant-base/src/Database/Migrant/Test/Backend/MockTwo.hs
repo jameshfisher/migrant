@@ -13,6 +13,7 @@ import Database.Migrant.Backend.MockTwo
 testGroupBackendMock :: [Test]
 testGroupBackendMock =
   [ testGroup "backendEnsureStack"
-    [ testProperty "on new DB creates new stack" $ fst $ runState (backendEnsureStack ()) mockConnect
+    [ testProperty "on new DB creates new stack"    $       fst $ runState (backendEnsureStack ()) mockConnect
+    , testProperty "on initialized DB does nothing" $ not $ fst $ runState (backendEnsureStack ()) (MockConnection (Just []) (MockState Nothing 0))
     ]
   ]
