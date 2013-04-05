@@ -4,13 +4,19 @@ module Database.Migrant.Types.Backend
 
 import Database.Migrant.Types.Migration (Migration (..))
 
-class (Eq q, Show q, Eq cond, Show cond, Functor m, Monad m) => Backend conn q cond m | conn -> q cond m where
-  backendEnsureStack         :: conn -> m Bool
-  backendGetMigrations       :: conn -> m [Migration q (Maybe q) cond]
-  backendBeginTransaction    :: conn -> m ()
-  backendRollbackTransaction :: conn -> m ()
-  backendCommitTransaction   :: conn -> m (Maybe String)
-  backendRunMigration        :: conn -> q -> m (Maybe String)
-  backendPushMigration       :: conn -> Migration q (Maybe q) cond -> m ()
-  backendPopMigration        :: conn -> m ()
-  backendTestCondition       :: conn -> cond -> m Bool
+class (Show (BackendQuery conn), Eq (BackendQuery conn), Eq (BackendCond conn), Show (BackendCond conn), Functor (BackendMonad conn), Monad (BackendMonad conn)) =>
+    Backend conn where
+
+  type BackendMonad conn :: * -> *
+  type BackendQuery conn :: *
+  type BackendCond  conn :: *
+
+  backendEnsureStack         :: conn -> BackendMonad conn Bool
+  backendGetMigrations       :: conn -> BackendMonad conn [Migration (BackendQuery conn) (Maybe (BackendQuery conn)) (BackendCond conn)]
+  backendBeginTransaction    :: conn -> BackendMonad conn ()
+  backendRollbackTransaction :: conn -> BackendMonad conn ()
+  backendCommitTransaction   :: conn -> BackendMonad conn (Maybe String)
+  backendRunMigration        :: conn -> BackendQuery conn -> BackendMonad conn (Maybe String)
+  backendPushMigration       :: conn -> Migration (BackendQuery conn) (Maybe (BackendQuery conn)) (BackendCond conn) -> BackendMonad conn ()
+  backendPopMigration        :: conn -> BackendMonad conn ()
+  backendTestCondition       :: conn -> BackendCond conn -> BackendMonad conn Bool

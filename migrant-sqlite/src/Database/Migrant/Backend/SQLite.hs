@@ -14,7 +14,11 @@ raiseLeft act = do
     Left err -> error $ "Program error: " ++ err
     Right v  -> return v
 
-instance Backend SQLiteHandle String String IO where
+instance Backend SQLiteHandle where
+
+  type BackendMonad SQLiteHandle = IO
+  type BackendQuery SQLiteHandle = String
+  type BackendCond  SQLiteHandle = String
 
   backendEnsureStack handle = do
     rows <- raiseLeft $ execStatement handle

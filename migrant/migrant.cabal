@@ -47,10 +47,10 @@ library
   extensions:
     QuasiQuotes,
     OverloadedStrings,
-    MultiParamTypeClasses,
-    FunctionalDependencies,
     FlexibleInstances,
-    RecordWildCards
+    RecordWildCards,
+    TypeFamilies,
+    FlexibleContexts
 
 test-suite test-migrant
   type: exitcode-stdio-1.0
@@ -81,7 +81,7 @@ test-suite test-migrant
   extensions:
     QuasiQuotes,
     OverloadedStrings,
-    MultiParamTypeClasses,
-    FunctionalDependencies,
     FlexibleInstances,
-    RecordWildCards
+    RecordWildCards,
+    TypeFamilies,
+    FlexibleContexts

@@ -27,8 +27,11 @@ mockConnect = MockConnection {
   mockConnectionState = MockState Nothing 0
   }
 
-instance Backend () MockQuery MockCondition (State MockConnection) where
-  
+instance Backend () where
+  type BackendMonad () = State MockConnection
+  type BackendQuery () = MockQuery
+  type BackendCond  () = MockCondition
+
   backendEnsureStack conn = do
     db <- get
     let maybeStack = mockConnectionStack db

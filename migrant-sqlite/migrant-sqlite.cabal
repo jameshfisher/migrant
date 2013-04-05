@@ -33,8 +33,9 @@ library
   extensions:
     QuasiQuotes,
     OverloadedStrings,
-    MultiParamTypeClasses,
-    FlexibleInstances
+    FlexibleInstances,
+    TypeFamilies,
+    FlexibleContexts
 
 test-suite test-migrant-sqlite
   type: exitcode-stdio-1.0
@@ -54,5 +55,6 @@ test-suite test-migrant-sqlite
   extensions:
     QuasiQuotes,
     OverloadedStrings,
-    MultiParamTypeClasses,
-    FlexibleInstances
+    FlexibleInstances,
+    TypeFamilies,
+    FlexibleContexts

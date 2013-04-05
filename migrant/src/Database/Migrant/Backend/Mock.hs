@@ -27,8 +27,11 @@ mockConnect = newIORef $ MockConnection {
   mockConnectionState = MockState Nothing 0
   }
 
-instance Backend (IORef MockConnection) MockQuery MockCondition IO where
-  
+instance Backend (IORef MockConnection) where
+  type BackendMonad (IORef MockConnection) = IO
+  type BackendQuery (IORef MockConnection) = MockQuery
+  type BackendCond  (IORef MockConnection) = MockCondition
+
   backendEnsureStack conn = do
     db <- readIORef conn
     let maybeStack = mockConnectionStack db

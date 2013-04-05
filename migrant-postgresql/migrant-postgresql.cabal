@@ -33,9 +33,10 @@ library
   extensions:
     QuasiQuotes,
     OverloadedStrings,
-    MultiParamTypeClasses,
     FlexibleInstances,
-    RecordWildCards
+    RecordWildCards,
+    TypeFamilies,
+    FlexibleContexts
 
 test-suite test-migrant-postgresql
   type: exitcode-stdio-1.0
@@ -54,6 +55,7 @@ test-suite test-migrant-postgresql
   extensions:
     QuasiQuotes,
     OverloadedStrings,
-    MultiParamTypeClasses,
     FlexibleInstances,
-    RecordWildCards
+    RecordWildCards,
+    TypeFamilies,
+    FlexibleContexts
