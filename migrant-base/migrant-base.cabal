@@ -1,4 +1,4 @@
-name: migrant
+name: migrant-base
 version: 0.0.1
 synopsis: Database migration
 description: Database migration
