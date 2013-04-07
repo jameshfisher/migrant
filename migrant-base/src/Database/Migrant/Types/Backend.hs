@@ -1,5 +1,7 @@
 module Database.Migrant.Types.Backend
   ( Backend (..)
+  , UpMigration
+  , BiMigration
   ) where
 
 import Database.Migrant.Types.Migration (Migration (..))
@@ -20,3 +22,6 @@ class (Show (BackendQuery conn), Eq (BackendQuery conn), Eq (BackendCond conn), 
   backendPushMigration       :: conn -> Migration (BackendQuery conn) (Maybe (BackendQuery conn)) (BackendCond conn) -> BackendMonad conn ()
   backendPopMigration        :: conn -> BackendMonad conn ()
   backendTestCondition       :: conn -> BackendCond conn -> BackendMonad conn Bool
+
+type UpMigration conn = Migration (BackendQuery conn) (Maybe (BackendQuery conn)) (BackendCond conn)
+type BiMigration conn = Migration (BackendQuery conn) (BackendQuery conn) (BackendCond conn)

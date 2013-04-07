@@ -8,16 +8,13 @@ import Control.Monad
 import Control.Monad.Reader
 
 import Database.Migrant.Types.Migration (Migration (..))
-import Database.Migrant.Types.Backend (Backend (..))
+import Database.Migrant.Types.Backend (Backend (..), UpMigration, BiMigration)
 import Database.Migrant.Types.Message (Message (..))
 import Database.Migrant.Types.MigrateSettings (MigrateSettings (..))
 
 import Database.Migrant.PlanMigration
 
 type Runner conn = ReaderT (MigrateSettings conn) (BackendMonad conn)
-
-type UpMigration conn = Migration (BackendQuery conn) (Maybe (BackendQuery conn)) (BackendCond conn)
-type BiMigration conn = Migration (BackendQuery conn) (BackendQuery conn) (BackendCond conn)
 
 showUpMigration :: Show query => Migration query (Maybe query) cond -> String
 showUpMigration m = fromMaybe (show $ migrationUp m) $ migrationDescription m

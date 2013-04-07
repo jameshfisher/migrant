@@ -8,6 +8,7 @@ module Database.Migrant.Types.Mock
   , MockConnection (..)
   ) where
 
+import Database.Migrant.Types.Message (Message)
 import Database.Migrant.Types.Migration (Migration)
 
 data MockState = MockState
@@ -33,6 +34,7 @@ data Action
   | ActionPushMigration Mig
   | ActionPopMigration
   | ActionTestCondition MockCondition
+  | ActionMessage Message
   deriving (Eq, Show)
 
 data MockConnection = MockConnection {

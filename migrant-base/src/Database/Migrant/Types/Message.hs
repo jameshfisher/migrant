@@ -17,4 +17,4 @@ data Message
   | MessageMissingDownMigrations [String]
   | MessageAborted
   | MessageCompleted Int
-  deriving (Eq)
+  deriving (Eq, Show)
