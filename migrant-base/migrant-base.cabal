@@ -24,10 +24,8 @@ library
     bytestring,
     template-haskell,
     Cabal,
-    HUnit,
     QuickCheck,
     test-framework,
-    test-framework-hunit,
     test-framework-quickcheck2
   exposed-modules:
     Database.Migrant
@@ -67,10 +65,8 @@ test-suite test-migrant
   build-depends:
     base,
     Cabal,
-    HUnit,
     QuickCheck,
     test-framework,
-    test-framework-hunit,
     test-framework-quickcheck2
   ghc-options: -Wall -fno-warn-name-shadowing -O0
   cpp-options: -DTesting
