@@ -5,6 +5,7 @@ module Database.Migrant.PlanMigration
 #ifdef Testing
   , fusePrefix
   , collectUps
+  , tryMigrateDown
 #endif
 
   ) where

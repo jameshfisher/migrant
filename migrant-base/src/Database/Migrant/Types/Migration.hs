@@ -1,6 +1,7 @@
 module Database.Migrant.Types.Migration
   ( Migration (..)
   , defaultMigration
+  , fromBiMigration
   ) where
 
 data Migration up down cond = Migration
@@ -19,3 +20,6 @@ defaultMigration up = Migration
   , migrationPost = Nothing
   , migrationDescription = Nothing
   }
+
+fromBiMigration :: Migration up up cond -> Migration up (Maybe up) cond
+fromBiMigration (Migration up down pre post desc) = Migration up (Just down) pre post desc

@@ -1,18 +1,18 @@
 module Database.Migrant.Test.PlanMigration (testGroupPlanMigration) where
 
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, isJust)
 
 import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
-import Test.QuickCheck (elements, (==>), NonEmptyList (..))
+import Test.QuickCheck (elements, NonEmptyList (..))
 import Test.QuickCheck.Arbitrary (arbitrary)
 
-import Database.Migrant.Types.Migration (Migration (migrationDown))
+import Database.Migrant.Types.Migration (Migration (migrationDown), fromBiMigration)
 import Database.Migrant.Backend.Mock (Mig)
 
 import Database.Migrant.Test.Types ()
-import Database.Migrant.PlanMigration (fusePrefix, collectUps)
+import Database.Migrant.PlanMigration (fusePrefix, collectUps, tryMigrateDown)
 
 subseq :: Eq a => [a] -> [a] -> Bool
 []     `subseq` _      = True
@@ -50,5 +50,15 @@ testGroupPlanMigration =
         return $ if (isNothing $ migrationDown a)
           then a `elem` collectUps as
           else True
+    ]
+
+  , testGroup "tryMigrateDown"
+    [ testProperty "returns prefix of migrations" $
+        \(as :: [Mig]) ->
+          let (bis, _) = tryMigrateDown as
+          in map fromBiMigration bis == takeWhile (isJust . migrationDown) as
+
+    , testProperty "returns collectUps" $
+        \(as :: [Mig]) -> (snd $ tryMigrateDown as) == collectUps as
     ]
   ]
