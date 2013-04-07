@@ -4,7 +4,7 @@ module Database.Migrant.Test.Types where
 import Control.Applicative ((<$>), (<*>))
 
 import Database.Migrant.Types.Migration (Migration (..))
-import Database.Migrant.Backend.Mock
+import Database.Migrant.Types.Mock
   ( Mig
   , MockState (..)
   , Action (..)

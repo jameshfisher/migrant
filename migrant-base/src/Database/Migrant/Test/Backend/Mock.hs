@@ -9,10 +9,11 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 
 import Test.QuickCheck ((==>))
 
+import Database.Migrant.Types.Mock (MockConnection (..), MockState (..), Action (..))
 import Database.Migrant.Types.Backend (Backend (..))
 import Database.Migrant.Test.Types ()
 
-import Database.Migrant.Backend.Mock
+import Database.Migrant.Backend.Mock ()
 
 testGroupBackendMock :: [Test]
 testGroupBackendMock =

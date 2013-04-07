@@ -9,7 +9,7 @@ import Test.QuickCheck (elements, NonEmptyList (..))
 import Test.QuickCheck.Arbitrary (arbitrary)
 
 import Database.Migrant.Types.Migration (Migration (migrationDown), fromBiMigration)
-import Database.Migrant.Backend.Mock (Mig)
+import Database.Migrant.Types.Mock (Mig)
 
 import Database.Migrant.Test.Types ()
 import Database.Migrant.PlanMigration (fusePrefix, collectUps, tryMigrateDown)
