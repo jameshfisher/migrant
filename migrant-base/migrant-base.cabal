@@ -43,8 +43,6 @@ library
     Database.Migrant.Test.Backend.Mock
   ghc-options: -Wall -fno-warn-name-shadowing
   extensions:
-    QuasiQuotes,
-    OverloadedStrings,
     FlexibleInstances,
     RecordWildCards,
     TypeFamilies,
@@ -77,8 +75,6 @@ test-suite test-migrant
   ghc-options: -Wall -fno-warn-name-shadowing -O0
   cpp-options: -DTesting
   extensions:
-    QuasiQuotes,
-    OverloadedStrings,
     FlexibleInstances,
     RecordWildCards,
     TypeFamilies,
