@@ -27,7 +27,7 @@ main = do
   
   r <- extractSqlError $ throw (SqlError "gszg" 0 "gdh")
   case r of
-    Left e -> putStrLn $ "SqlError: " ++ (show $ sqlErrorMsg e)
+    Left e -> putStrLn $ "SqlError: " ++ show (sqlErrorMsg e)
     Right f -> putStrLn $ "Okay: " ++ f
 
   return ()

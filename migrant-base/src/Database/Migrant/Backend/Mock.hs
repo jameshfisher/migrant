@@ -17,7 +17,7 @@ mockConnect = MockConnection {
 lg :: Action -> State MockConnection ()
 lg a = do
   conn <- get
-  put $ conn { mockConnectionLog = (mockConnectionLog conn) ++ [a] }
+  put $ conn { mockConnectionLog = mockConnectionLog conn ++ [a] }
 
 instance Backend () where
   type BackendMonad () = State MockConnection

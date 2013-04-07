@@ -47,9 +47,7 @@ testGroupPlanMigration =
     , testProperty "returns all ups" $ do
         NonEmpty (as :: [Mig]) <- arbitrary
         a <- elements as
-        return $ if (isNothing $ migrationDown a)
-          then a `elem` collectUps as
-          else True
+        return $ isJust (migrationDown a) || (a `elem` collectUps as)
     ]
 
   , testGroup "tryMigrateDown"
@@ -59,6 +57,6 @@ testGroupPlanMigration =
           in map fromBiMigration bis == takeWhile (isJust . migrationDown) as
 
     , testProperty "returns collectUps" $
-        \(as :: [Mig]) -> (snd $ tryMigrateDown as) == collectUps as
+        \(as :: [Mig]) -> snd (tryMigrateDown as) == collectUps as
     ]
   ]

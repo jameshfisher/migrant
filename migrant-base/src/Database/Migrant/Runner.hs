@@ -103,21 +103,23 @@ upMigrateUI m = transact $
   testPrecondition (migrationPre m) $
     runMigration (migrationUp m) $
       testPostcondition (migrationPost m) $ do
-        case migrationDown m of
-          Nothing -> do
-            msg MessageWarnNoDownMigration
+
+        let
+          push = do
             conn <- migrateSettingsBackend <$> ask
             lift $ backendPushMigration conn m
             return Nothing
+
+        case migrationDown m of
+          Nothing -> do
+            msg MessageWarnNoDownMigration
+            push
           Just down -> do
             msg MessageTestingDownMigration
             runMigration down $
               testPrecondition (migrationPre m) $
                 runMigration (migrationUp m) $
-                  testPostcondition (migrationPost m) $ do
-                    conn <- migrateSettingsBackend <$> ask
-                    lift $ backendPushMigration conn m
-                    return Nothing
+                  testPostcondition (migrationPost m) push
 
 -- TODO downMigrateListUI and upMigrateListUI are almost the same
 downMigrateListUI :: Backend conn => [BiMigration conn] -> Runner conn (Maybe String)
