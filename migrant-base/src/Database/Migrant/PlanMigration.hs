@@ -4,6 +4,7 @@ module Database.Migrant.PlanMigration
 
 #ifdef Testing
   , fusePrefix
+  , collectUps
 #endif
 
   ) where

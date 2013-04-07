@@ -1,10 +1,23 @@
 module Database.Migrant.Test.PlanMigration (testGroupPlanMigration) where
 
+import Data.Maybe (isNothing)
+
 import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
+import Test.QuickCheck (elements, (==>), NonEmptyList (..))
+import Test.QuickCheck.Arbitrary (arbitrary)
+
+import Database.Migrant.Types.Migration (Migration (migrationDown))
+import Database.Migrant.Backend.Mock (Mig)
+
 import Database.Migrant.Test.Types ()
-import Database.Migrant.PlanMigration (fusePrefix)
+import Database.Migrant.PlanMigration (fusePrefix, collectUps)
+
+subseq :: Eq a => [a] -> [a] -> Bool
+[]     `subseq` _      = True
+(_:_ ) `subseq` []     = False
+(a:as) `subseq` (b:bs) = (if a == b then as else a:as) `subseq` bs
 
 testGroupPlanMigration :: [Test]
 testGroupPlanMigration =
@@ -21,5 +34,21 @@ testGroupPlanMigration =
           in case (as', bs') of
             (a:_, b:_) -> a /= b
             _ -> True
+    ]
+
+  , testGroup "collectUps"
+    [ testProperty "returns subsequence" $
+        \(as :: [Mig]) ->
+          collectUps as `subseq` as
+
+    , testProperty "only returns ups" $
+        \(as :: [Mig]) -> all (isNothing . migrationDown) $ collectUps as
+
+    , testProperty "returns all ups" $ do
+        NonEmpty (as :: [Mig]) <- arbitrary
+        a <- elements as
+        return $ if (isNothing $ migrationDown a)
+          then a `elem` collectUps as
+          else True
     ]
   ]
