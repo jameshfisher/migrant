@@ -48,7 +48,8 @@ library
     FlexibleInstances,
     RecordWildCards,
     TypeFamilies,
-    FlexibleContexts
+    FlexibleContexts,
+    CPP
 
 test-suite test-migrant
   type: exitcode-stdio-1.0
@@ -73,11 +74,13 @@ test-suite test-migrant
     test-framework,
     test-framework-hunit,
     test-framework-quickcheck2
-  ghc-options: -Wall -fno-warn-name-shadowing -O0
+  ghc-options: -Wall -fno-warn-name-shadowing -O0 -DTesting
   extensions:
     QuasiQuotes,
     OverloadedStrings,
     FlexibleInstances,
     RecordWildCards,
     TypeFamilies,
-    FlexibleContexts
+    FlexibleContexts,
+    CPP,
+    ScopedTypeVariables

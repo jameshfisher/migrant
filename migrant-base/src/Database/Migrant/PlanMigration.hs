@@ -1,6 +1,11 @@
 module Database.Migrant.PlanMigration
   ( Plan (..)
   , planMigration
+
+#ifdef Testing
+  , fusePrefix
+#endif
+
   ) where
 
 import Data.Maybe
@@ -12,12 +17,16 @@ data Plan q c
   = AbortivePlan [Migration q q c] [Migration q (Maybe q) c]
   | Plan [Migration q q c] [Migration q (Maybe q) c]
 
-stripPrefix :: (a -> a -> Bool) -> [a] -> [a] -> ([a], [a])
-stripPrefix eq (a:as) (b:bs) =
+fusePrefix :: (a -> a -> Bool) -> [a] -> [a] -> ([a], [a], [a])
+fusePrefix eq (a:as) (b:bs) =
   if a `eq` b
-  then stripPrefix eq as bs
-  else (a:as, b:bs)
-stripPrefix _ as bs = (as, bs)
+  then let (p, as', bs') = fusePrefix eq as bs
+       in (a:p, as', bs')
+  else ([], a:as, b:bs)
+fusePrefix _ as bs = ([], as, bs)
+
+stripPrefix :: (a -> a -> Bool) -> [a] -> [a] -> ([a], [a])
+stripPrefix eq as bs = (as', bs') where (_, as', bs') = fusePrefix eq as bs
 
 collectUps :: Eq q => [Migration q (Maybe q) c] -> [Migration q (Maybe q) c]
 collectUps = filter (isNothing . migrationDown)

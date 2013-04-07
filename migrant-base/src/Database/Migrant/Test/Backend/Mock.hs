@@ -13,35 +13,9 @@ import Test.QuickCheck.Arbitrary (Arbitrary (..))
 
 import Database.Migrant.Types.Migration (Migration (..))
 import Database.Migrant.Types.Backend (Backend (..))
+import Database.Migrant.Test.Types ()
 
 import Database.Migrant.Backend.Mock
-
-instance Arbitrary Mig where
-  arbitrary = Migration <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-
-instance Arbitrary MockState where
-  arbitrary = MockState <$> arbitrary <*> arbitrary
-
-instance Arbitrary Action where
-  arbitrary = do
-    x <- choose (0 :: Int, 8)
-    case x of
-      0 -> return ActionEnsureStack
-      1 -> return ActionGetMigrations
-      2 -> return ActionBeginTransaction
-      3 -> return ActionRollbackTransaction
-      4 -> return ActionCommitTransaction
-      5 -> do x1 <- arbitrary
-              return (ActionRunMigration x1)
-      6 -> do x1 <- arbitrary
-              return (ActionPushMigration x1)
-      7 -> return ActionPopMigration
-      8 -> do x1 <- arbitrary
-              return (ActionTestCondition x1)
-      _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
-
-instance Arbitrary MockConnection where
-  arbitrary = MockConnection <$> arbitrary <*> arbitrary <*> arbitrary
 
 testGroupBackendMock :: [Test]
 testGroupBackendMock =
