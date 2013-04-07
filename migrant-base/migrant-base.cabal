@@ -74,7 +74,8 @@ test-suite test-migrant
     test-framework,
     test-framework-hunit,
     test-framework-quickcheck2
-  ghc-options: -Wall -fno-warn-name-shadowing -O0 -DTesting
+  ghc-options: -Wall -fno-warn-name-shadowing -O0
+  cpp-options: -DTesting
   extensions:
     QuasiQuotes,
     OverloadedStrings,
