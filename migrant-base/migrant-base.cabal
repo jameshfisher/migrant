@@ -40,9 +40,7 @@ library
     Database.Migrant.PlanMigration
     Database.Migrant.Runner
     Database.Migrant.Backend.Mock
-    Database.Migrant.Backend.MockTwo
     Database.Migrant.Test.Backend.Mock
-    Database.Migrant.Test.Backend.MockTwo
   ghc-options: -Wall -fno-warn-name-shadowing
   extensions:
     QuasiQuotes,
@@ -65,9 +63,7 @@ test-suite test-migrant
     Database.Migrant.PlanMigration
     Database.Migrant.Runner
     Database.Migrant.Backend.Mock
-    Database.Migrant.Backend.MockTwo
     Database.Migrant.Test.Backend.Mock
-    Database.Migrant.Test.Backend.MockTwo
   hs-source-dirs: src
   build-depends:
     base,

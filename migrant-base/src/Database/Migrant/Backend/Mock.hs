@@ -1,6 +1,7 @@
 module Database.Migrant.Backend.Mock where
 
-import Data.IORef
+import Control.Applicative
+import Control.Monad.State
 
 import Database.Migrant.Types.Migration (Migration (..))
 import Database.Migrant.Types.Backend (Backend (..))
@@ -14,89 +15,120 @@ type MockQuery = Maybe Int -- semantics: Nothing is invalid query; (Just i) adds
 
 type MockCondition = Int -- semantics: db state has to be >= this
 
-type MockStack = Maybe [Migration MockQuery (Maybe MockQuery) MockCondition] -- head is latest
+type Mig = Migration MockQuery (Maybe MockQuery) MockCondition
+
+type MockStack = Maybe [Mig] -- head is latest
+
+data Action
+  = ActionEnsureStack
+  | ActionGetMigrations
+  | ActionBeginTransaction
+  | ActionRollbackTransaction
+  | ActionCommitTransaction
+  | ActionRunMigration MockQuery
+  | ActionPushMigration Mig
+  | ActionPopMigration
+  | ActionTestCondition MockCondition
+  deriving (Eq, Show)
 
 data MockConnection = MockConnection {
+  mockConnectionLog   :: [Action],
   mockConnectionStack :: MockStack,
   mockConnectionState :: MockState
   } deriving (Eq, Show)
 
-mockConnect :: IO (IORef MockConnection)
-mockConnect = newIORef $ MockConnection {
+mockConnect :: MockConnection
+mockConnect = MockConnection {
+  mockConnectionLog = [],
   mockConnectionStack = Nothing,
   mockConnectionState = MockState Nothing 0
   }
 
-instance Backend (IORef MockConnection) where
-  type BackendMonad (IORef MockConnection) = IO
-  type BackendQuery (IORef MockConnection) = MockQuery
-  type BackendCond  (IORef MockConnection) = MockCondition
+lg :: Action -> State MockConnection ()
+lg a = do
+  conn <- get
+  put $ conn { mockConnectionLog = (mockConnectionLog conn) ++ [a] }
+
+instance Backend () where
+  type BackendMonad () = State MockConnection
+  type BackendQuery () = MockQuery
+  type BackendCond  () = MockCondition
 
   backendEnsureStack conn = do
-    db <- readIORef conn
+    lg ActionEnsureStack
+    db <- get
     let maybeStack = mockConnectionStack db
     case maybeStack of
       Nothing -> do
-        writeIORef conn $ db { mockConnectionStack = Just [] }
+        put $ db { mockConnectionStack = Just [] }
         return True
       Just _  -> return False
 
   backendGetMigrations conn = do
-    db <- readIORef conn
+    lg ActionGetMigrations
+    db <- get
     let maybeStack = mockConnectionStack db
     case maybeStack of
       Nothing    -> error "MockConnection: tried to get migrations when no stack exists!"
       Just stack -> return stack
 
   backendBeginTransaction conn = do
-    db <- readIORef conn
+    lg ActionBeginTransaction
+    db <- get
     let MockState rollback state = mockConnectionState db
     case rollback of
       Just _  -> error "MockConnection: tried to begin a transaction when inside a transaction"
-      Nothing -> writeIORef conn $ db { mockConnectionState = MockState (Just state) state }
+      Nothing -> put $ db { mockConnectionState = MockState (Just state) state }
 
   backendRollbackTransaction conn = do
-    db <- readIORef conn
+    lg ActionRollbackTransaction
+    db <- get
     let MockState rollback _ = mockConnectionState db
     case rollback of
       Nothing -> error "MockConnection: tried to rollback a transaction when outside a transaction"
-      Just r  -> writeIORef conn $ db { mockConnectionState = MockState Nothing r }
+      Just r  -> put $ db { mockConnectionState = MockState Nothing r }
 
   backendCommitTransaction conn = do
-    db <- readIORef conn
+    lg ActionCommitTransaction
+    db <- get
     let MockState rollback state = mockConnectionState db
     case rollback of
       Nothing -> error "MockConnection: tried to commit a transaction when outside a transaction"
       Just _  -> do
-        writeIORef conn $ db { mockConnectionState = MockState Nothing state }
+        put $ db { mockConnectionState = MockState Nothing state }
         return Nothing
 
-  backendRunMigration conn m = case m of
-    Nothing -> return $ Just "MockConnection: invalid query"
-    Just downValid -> do
-      db <- readIORef conn
-      let state = mockConnectionState db
-      writeIORef conn $ db {
-        mockConnectionState = state { mockState = mockState state + downValid }
-        }
-      return Nothing
+  backendRunMigration conn m = do
+    lg $ ActionRunMigration m
+    case m of
+      Nothing -> return $ Just "MockConnection: invalid query"
+      Just downValid -> do
+        db <- get
+        let state = mockConnectionState db
+        put $ db {
+          mockConnectionState = state { mockState = mockState state + downValid }
+          }
+        return Nothing
 
   backendPushMigration conn m = do
-    db <- readIORef conn
+    lg $ ActionPushMigration m
+    db <- get
     let maybeStack = mockConnectionStack db
     case maybeStack of
       Nothing    -> error "MockConnection: tried to push migration when no stack exists!"
-      Just stack -> writeIORef conn $ db { mockConnectionStack = Just (m:stack) }
+      Just stack -> put $ db { mockConnectionStack = Just (m:stack) }
 
   backendPopMigration conn = do
-    db <- readIORef conn
+    lg ActionPopMigration
+    db <- get
     let maybeStack = mockConnectionStack db
     case maybeStack of
       Nothing    -> error "MockConnection: tried to pop migration when no stack exists!"
       Just stack -> case stack of
                       []   -> error "MockConnection: tried to pop migration when the stack is empty!"
-                      _:ms -> writeIORef conn $ db { mockConnectionStack = Just ms }
+                      _:ms -> put $ db { mockConnectionStack = Just ms }
 
   backendTestCondition conn cond = do
-    MockConnection _ (MockState _ state) <- readIORef conn
+    lg $ ActionTestCondition cond
+    MockState _ state <- mockConnectionState <$> get
     return $ cond <= state

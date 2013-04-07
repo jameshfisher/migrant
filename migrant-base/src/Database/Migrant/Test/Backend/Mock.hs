@@ -1,70 +1,145 @@
 module Database.Migrant.Test.Backend.Mock (testGroupBackendMock) where
 
-import Data.IORef
-import qualified Test.HUnit as HUnit (assertEqual)
+import Data.Maybe (isJust, isNothing, fromJust)
+
+import Control.Applicative ((<$>), (<*>))
+import Control.Monad.State
+
 import Test.Framework (Test, testGroup)
-import Test.Framework.Providers.HUnit (testCase)
+import Test.Framework.Providers.QuickCheck2 (testProperty)
+
+import Test.QuickCheck (choose, (==>))
+import Test.QuickCheck.Arbitrary (Arbitrary (..))
 
 import Database.Migrant.Types.Migration (Migration (..))
 import Database.Migrant.Types.Backend (Backend (..))
 
 import Database.Migrant.Backend.Mock
 
+instance Arbitrary Mig where
+  arbitrary = Migration <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
+instance Arbitrary MockState where
+  arbitrary = MockState <$> arbitrary <*> arbitrary
+
+instance Arbitrary Action where
+  arbitrary = do
+    x <- choose (0 :: Int, 8)
+    case x of
+      0 -> return ActionEnsureStack
+      1 -> return ActionGetMigrations
+      2 -> return ActionBeginTransaction
+      3 -> return ActionRollbackTransaction
+      4 -> return ActionCommitTransaction
+      5 -> do x1 <- arbitrary
+              return (ActionRunMigration x1)
+      6 -> do x1 <- arbitrary
+              return (ActionPushMigration x1)
+      7 -> return ActionPopMigration
+      8 -> do x1 <- arbitrary
+              return (ActionTestCondition x1)
+      _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
+
+instance Arbitrary MockConnection where
+  arbitrary = MockConnection <$> arbitrary <*> arbitrary <*> arbitrary
+
 testGroupBackendMock :: [Test]
 testGroupBackendMock =
-  [ testCase "Expected connect" $ do
-      conn <- mockConnect
-      db <- readIORef conn
-      HUnit.assertEqual
-        "mockConnect should return a DB with no migration stack, a fresh DB state, and no transaction"
-        (MockConnection Nothing (MockState Nothing 0))
-        db
+  [ testGroup "backendEnsureStack"
+    [ testGroup "on DB without stack"
+      [ testProperty "returns True" $
+          \conn ->
+            (isNothing $ mockConnectionStack conn) ==>
+              fst $ runState (backendEnsureStack ()) conn
 
-  , testGroup "backendEnsureStack"
-    [ testCase "on new DB creates new stack" $ do
-        conn <- mockConnect
-        true <- backendEnsureStack conn
-        HUnit.assertEqual "backendEnsureStack should return True when creating a stack" True true
-        db <- readIORef conn
-        HUnit.assertEqual "backendEnsureStack should create a migration stack when none exists" (Just []) (mockConnectionStack db)
+      , testProperty "creates new stack" $
+          \conn ->
+            (isNothing $ mockConnectionStack conn) ==>
+              (mockConnectionStack $ snd $ runState (backendEnsureStack ()) conn)
+              == (Just [])
+      ]
 
-    , testCase "on initialized DB does nothing" $ do
-        let migs =  [ Migration (Just 4)    (Just $ Just (-4)) Nothing Nothing (Just "add 4")
-                    , Migration (Just (-3)) (Just $ Just 3)    Nothing Nothing (Just "subtract 3")
-                    ]
-            initial = MockConnection (Just migs) (MockState Nothing 4)
-        conn <- newIORef initial
-        false <- backendEnsureStack conn
-        HUnit.assertEqual "backendEnsureStack should return False when not creating a stack" False false
-        db <- readIORef conn
-        HUnit.assertEqual "backendEnsureStack should do nothing when a migration stack exists" initial db
+    , testGroup "on DB with stack"
+      [ testProperty "returns False" $
+          \conn ->
+            (isJust $ mockConnectionStack conn) ==>
+              not $ fst $ runState (backendEnsureStack ()) conn
+
+      , testProperty "leaves stack alone" $
+          \conn ->
+            (isJust $ mockConnectionStack conn) ==>
+              (mockConnectionStack $ snd $ runState (backendEnsureStack ()) conn)
+              == mockConnectionStack conn
+      ]
+
+    , testProperty "does not touch state" $
+        \conn ->
+          (mockConnectionState $ snd $ runState (backendEnsureStack ()) conn)
+          == mockConnectionState conn
+
+    , testProperty "logs action" $
+        \conn ->
+          (mockConnectionLog $ snd $ runState (backendEnsureStack ()) conn)
+          == mockConnectionLog conn ++ [ActionEnsureStack]
     ]
 
-  , testCase "backendGetMigrations returns migrations" $ do
-      let migs =  [ Migration (Just 4)    (Just $ Just (-4)) Nothing Nothing (Just "add 4")
-                  , Migration (Just (-3)) (Just $ Just 3)    Nothing Nothing (Just "subtract 3")
-                  ]
-          initial = MockConnection (Just migs) (MockState Nothing 4)
-      conn <- newIORef initial
-      migs' <- backendGetMigrations conn
-      HUnit.assertEqual "backendGetMigrations returns migrations in current state" migs migs'
-      db <- readIORef conn
-      HUnit.assertEqual "backendGetMigrations does not change state" initial db
+  , testGroup "backendGetMigrations"
+    [ testProperty "returns migrations" $
+        \conn ->
+          (isJust $ mockConnectionStack conn) ==>
+            (fst $ runState (backendGetMigrations ()) conn)
+            == (fromJust $ mockConnectionStack conn)
+
+    , testProperty "does not touch state" $
+        \conn ->
+          (isJust $ mockConnectionStack conn) ==>
+            (mockConnectionState $ snd $ runState (backendGetMigrations ()) conn)
+            == mockConnectionState conn
+
+    , testProperty "logs action" $
+        \conn ->
+          (isJust $ mockConnectionStack conn) ==>
+            (mockConnectionLog $ snd $ runState (backendGetMigrations ()) conn)
+            == mockConnectionLog conn ++ [ActionGetMigrations]
+    ]
 
   , testGroup "backendRunMigration"
-    [ testCase "returns exception with invalid query" $ do
-        let initial = (MockConnection (Just [Migration (Just 4) (Just Nothing) Nothing Nothing (Just "add 4")]) (MockState Nothing 4))
-        conn <- newIORef initial
-        res <- backendRunMigration conn Nothing
-        HUnit.assertEqual "" (Just "MockConnection: invalid query") res
-        db <- readIORef conn
-        HUnit.assertEqual "" initial db
+    [ testGroup "with invalid query"
+      [ testProperty "returns exception" $
+          \conn ->
+            (isJust $ mockConnectionStack conn) ==>
+              isJust $ fst $ runState (backendRunMigration () Nothing) conn
 
-    , testCase "runs valid query" $ do
-        conn <- newIORef (MockConnection (Just []) (MockState Nothing 0))
-        res <- backendRunMigration conn $ Just 4
-        HUnit.assertEqual "" Nothing res
-        db <- readIORef conn
-        HUnit.assertEqual "" (MockConnection (Just []) (MockState Nothing 4)) db
+      , testProperty "does not touch state" $
+          \conn ->
+          (isJust $ mockConnectionStack conn) ==>
+            (mockConnectionState $ snd $ runState (backendRunMigration () Nothing) conn)
+            == mockConnectionState conn
+      ]
+
+    , testGroup "with valid query"
+      [ testProperty "does not return exception" $
+          \conn q ->
+            (isJust $ mockConnectionStack conn) && isJust q ==>
+              isNothing $ fst $ runState (backendRunMigration () q) conn
+
+      , testProperty "runs query" $
+          \conn q ->
+            (isJust $ mockConnectionStack conn) && isJust q ==>
+              (mockState $ mockConnectionState $ snd $ runState (backendRunMigration () q) conn)
+              == fromJust q + (mockState $ mockConnectionState conn)
+      ]
+
+    , testProperty "does not touch stack" $
+        \conn ->
+          (isJust $ mockConnectionStack conn) ==>
+            (mockConnectionStack $ snd $ runState (backendRunMigration () Nothing) conn)
+            == mockConnectionStack conn
+
+    , testProperty "logs action" $
+        \conn ->
+          (isJust $ mockConnectionStack conn) ==>
+            (mockConnectionLog $ snd $ runState (backendRunMigration () Nothing) conn)
+            == mockConnectionLog conn ++ [ActionRunMigration Nothing]
     ]
   ]
