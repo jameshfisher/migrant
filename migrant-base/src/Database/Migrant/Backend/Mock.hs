@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Database.Migrant.Backend.Mock where
 
 import Control.Applicative
@@ -54,7 +55,7 @@ instance Backend () where
   type BackendQuery () = MockQuery
   type BackendCond  () = MockCondition
 
-  backendEnsureStack conn = do
+  backendEnsureStack _ = do
     lg ActionEnsureStack
     db <- get
     let maybeStack = mockConnectionStack db
@@ -64,7 +65,7 @@ instance Backend () where
         return True
       Just _  -> return False
 
-  backendGetMigrations conn = do
+  backendGetMigrations _ = do
     lg ActionGetMigrations
     db <- get
     let maybeStack = mockConnectionStack db
@@ -72,7 +73,7 @@ instance Backend () where
       Nothing    -> error "MockConnection: tried to get migrations when no stack exists!"
       Just stack -> return stack
 
-  backendBeginTransaction conn = do
+  backendBeginTransaction _ = do
     lg ActionBeginTransaction
     db <- get
     let MockState rollback state = mockConnectionState db
@@ -80,7 +81,7 @@ instance Backend () where
       Just _  -> error "MockConnection: tried to begin a transaction when inside a transaction"
       Nothing -> put $ db { mockConnectionState = MockState (Just state) state }
 
-  backendRollbackTransaction conn = do
+  backendRollbackTransaction _ = do
     lg ActionRollbackTransaction
     db <- get
     let MockState rollback _ = mockConnectionState db
@@ -88,7 +89,7 @@ instance Backend () where
       Nothing -> error "MockConnection: tried to rollback a transaction when outside a transaction"
       Just r  -> put $ db { mockConnectionState = MockState Nothing r }
 
-  backendCommitTransaction conn = do
+  backendCommitTransaction _ = do
     lg ActionCommitTransaction
     db <- get
     let MockState rollback state = mockConnectionState db
@@ -98,7 +99,7 @@ instance Backend () where
         put $ db { mockConnectionState = MockState Nothing state }
         return Nothing
 
-  backendRunMigration conn m = do
+  backendRunMigration _ m = do
     lg $ ActionRunMigration m
     case m of
       Nothing -> return $ Just "MockConnection: invalid query"
@@ -110,7 +111,7 @@ instance Backend () where
           }
         return Nothing
 
-  backendPushMigration conn m = do
+  backendPushMigration _ m = do
     lg $ ActionPushMigration m
     db <- get
     let maybeStack = mockConnectionStack db
@@ -118,7 +119,7 @@ instance Backend () where
       Nothing    -> error "MockConnection: tried to push migration when no stack exists!"
       Just stack -> put $ db { mockConnectionStack = Just (m:stack) }
 
-  backendPopMigration conn = do
+  backendPopMigration _ = do
     lg ActionPopMigration
     db <- get
     let maybeStack = mockConnectionStack db
@@ -128,7 +129,7 @@ instance Backend () where
                       []   -> error "MockConnection: tried to pop migration when the stack is empty!"
                       _:ms -> put $ db { mockConnectionStack = Just ms }
 
-  backendTestCondition conn cond = do
+  backendTestCondition _ cond = do
     lg $ ActionTestCondition cond
     MockState _ state <- mockConnectionState <$> get
     return $ cond <= state

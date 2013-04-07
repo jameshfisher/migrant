@@ -2,16 +2,13 @@ module Database.Migrant.Test.Backend.Mock (testGroupBackendMock) where
 
 import Data.Maybe (isJust, isNothing, fromJust)
 
-import Control.Applicative ((<$>), (<*>))
 import Control.Monad.State
 
 import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
-import Test.QuickCheck (choose, (==>))
-import Test.QuickCheck.Arbitrary (Arbitrary (..))
+import Test.QuickCheck ((==>))
 
-import Database.Migrant.Types.Migration (Migration (..))
 import Database.Migrant.Types.Backend (Backend (..))
 import Database.Migrant.Test.Types ()
 

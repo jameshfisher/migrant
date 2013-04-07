@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Database.Migrant.Test.Types where
 
 import Control.Applicative ((<$>), (<*>))

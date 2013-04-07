@@ -19,7 +19,7 @@ testGroupPlanMigration =
         \(as :: [Int]) (bs :: [Int]) ->
           let (_, as', bs') = fusePrefix (==) as bs
           in case (as', bs') of
-            (a:as'', b:bs'') -> a /= b
+            (a:_, b:_) -> a /= b
             _ -> True
     ]
   ]
