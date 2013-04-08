@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Database.Migrant.Backend.PostgreSQL
   ( addColumn
   ) where
