@@ -73,7 +73,7 @@ instance Backend SQLiteHandle where
   backendRollbackTransaction conn = return ()
   backendCommitTransaction   conn = return Nothing
 
-  backendRunMigration = error "not implemented"
+  backendRunQuery = error "not implemented"
   backendPushMigration = error "not implemented"
   backendPopMigration = error "not implemented"
 

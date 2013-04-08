@@ -75,17 +75,17 @@ testGroupBackendMock =
             == mockConnectionLog conn ++ [ActionGetMigrations]
     ]
 
-  , testGroup "backendRunMigration"
+  , testGroup "backendRunQuery"
     [ testGroup "with invalid query"
       [ testProperty "returns exception" $
           \conn ->
             isJust (mockConnectionStack conn) ==>
-              isJust $ evalState (backendRunMigration () Nothing) conn
+              isJust $ evalState (backendRunQuery () Nothing) conn
 
       , testProperty "does not touch state" $
           \conn ->
           isJust (mockConnectionStack conn) ==>
-            mockConnectionState (execState (backendRunMigration () Nothing) conn)
+            mockConnectionState (execState (backendRunQuery () Nothing) conn)
             == mockConnectionState conn
       ]
 
@@ -93,25 +93,25 @@ testGroupBackendMock =
       [ testProperty "does not return exception" $
           \conn q ->
             isJust (mockConnectionStack conn) && isJust q ==>
-              isNothing $ evalState (backendRunMigration () q) conn
+              isNothing $ evalState (backendRunQuery () q) conn
 
       , testProperty "runs query" $
           \conn q ->
             isJust (mockConnectionStack conn) && isJust q ==>
-              mockState (mockConnectionState $ execState (backendRunMigration () q) conn)
+              mockState (mockConnectionState $ execState (backendRunQuery () q) conn)
               == fromJust q + mockState (mockConnectionState conn)
       ]
 
     , testProperty "does not touch stack" $
         \conn ->
           isJust (mockConnectionStack conn) ==>
-            mockConnectionStack (execState (backendRunMigration () Nothing) conn)
+            mockConnectionStack (execState (backendRunQuery () Nothing) conn)
             == mockConnectionStack conn
 
     , testProperty "logs action" $
         \conn ->
           isJust (mockConnectionStack conn) ==>
-            mockConnectionLog (execState (backendRunMigration () Nothing) conn)
+            mockConnectionLog (execState (backendRunQuery () Nothing) conn)
             == mockConnectionLog conn ++ [ActionRunMigration Nothing]
     ]
   ]

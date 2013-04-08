@@ -18,7 +18,7 @@ class (Show (BackendQuery conn), Eq (BackendQuery conn), Eq (BackendCond conn), 
   backendBeginTransaction    :: conn -> BackendMonad conn ()
   backendRollbackTransaction :: conn -> BackendMonad conn ()
   backendCommitTransaction   :: conn -> BackendMonad conn (Maybe String)
-  backendRunMigration        :: conn -> BackendQuery conn -> BackendMonad conn (Maybe String)
+  backendRunQuery            :: conn -> BackendQuery conn -> BackendMonad conn (Maybe String)
   backendPushMigration       :: conn -> Migration (BackendQuery conn) (Maybe (BackendQuery conn)) (BackendCond conn) -> BackendMonad conn ()
   backendPopMigration        :: conn -> BackendMonad conn ()
   backendTestCondition       :: conn -> BackendCond conn -> BackendMonad conn (Maybe String)

@@ -68,7 +68,7 @@ instance Backend () where
         put $ db { mockConnectionState = MockState Nothing state }
         return Nothing
 
-  backendRunMigration _ m = do
+  backendRunQuery _ m = do
     lg $ ActionRunMigration m
     case m of
       Nothing -> return $ Just "MockConnection: invalid query"

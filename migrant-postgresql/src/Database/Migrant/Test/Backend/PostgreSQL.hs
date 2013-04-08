@@ -88,12 +88,12 @@ testGroupBackendPostgreSQL =
 
         HUnit.assertEqual "returns those migrations" migs migs'
     ]
-  , testGroup "backendRunMigration"
+  , testGroup "backendRunQuery"
     [ testCase "on good migration" $ do
         conn <- testConnect
         clean conn
 
-        merr <- backendRunMigration conn "create table foo (bar text)"
+        merr <- backendRunQuery conn "create table foo (bar text)"
 
         HUnit.assertEqual "returns Nothing" Nothing merr
 
@@ -109,7 +109,7 @@ testGroupBackendPostgreSQL =
         conn <- testConnect
         clean conn
 
-        merr <- backendRunMigration conn "ntsrbsgdx"      
+        merr <- backendRunQuery conn "ntsrbsgdx"      
 
         HUnit.assert $ isJust merr
     ]

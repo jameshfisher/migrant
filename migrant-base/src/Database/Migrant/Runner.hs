@@ -63,7 +63,7 @@ testPostcondition = testMaybeCondition MessageWarnNoPostCondition MessageTesting
 runMigration :: Backend conn => BackendQuery conn -> Runner conn (Maybe String) -> Runner conn (Maybe String)
 runMigration query next = do
   conn <- migrateSettingsBackend <$> ask
-  err <- lift $ backendRunMigration conn query
+  err <- lift $ backendRunQuery conn query
   case err of
     Just err -> do
       lift $ backendRollbackTransaction conn

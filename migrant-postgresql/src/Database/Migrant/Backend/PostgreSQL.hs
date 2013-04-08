@@ -92,7 +92,7 @@ instance Backend Connection where
   backendRollbackTransaction = rollback
   backendCommitTransaction = catchSqlError . commit
 
-  backendRunMigration conn = catchSqlError . void . execute_ conn
+  backendRunQuery conn = catchSqlError . void . execute_ conn
 
   backendPushMigration conn mig = void $ execute conn
     [sql|
