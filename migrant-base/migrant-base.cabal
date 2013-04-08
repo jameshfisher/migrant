@@ -39,6 +39,8 @@ library
     Database.Migrant.Runner
     Database.Migrant.Backend.Mock
     Database.Migrant.Test.Backend.Mock
+    Database.Migrant.Test.Types
+    Database.Migrant.Types.Mock
   ghc-options: -Wall -fno-warn-name-shadowing
   extensions:
     FlexibleInstances,
@@ -61,6 +63,8 @@ test-suite test-migrant
     Database.Migrant.Runner
     Database.Migrant.Backend.Mock
     Database.Migrant.Test.Backend.Mock
+    Database.Migrant.Test.Types
+    Database.Migrant.Types.Mock
   hs-source-dirs: src
   build-depends:
     base,
