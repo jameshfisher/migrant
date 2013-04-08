@@ -101,4 +101,4 @@ instance Backend () where
   backendTestCondition _ cond = do
     lg $ ActionTestCondition cond
     MockState _ state <- mockConnectionState <$> get
-    return $ cond <= state
+    return $ if cond <= state then Nothing else Just "MockConnection: condition failed"

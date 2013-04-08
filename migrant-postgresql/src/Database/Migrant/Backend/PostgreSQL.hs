@@ -119,7 +119,7 @@ instance Backend Connection where
 
   backendTestCondition conn cond = do
     [[pass]] <- query_ conn cond
-    return pass
+    return $ if pass then Nothing else Just "condition failed"
 
 addColumn :: String -> String -> String -> String -> Migration Query (Maybe Query) Query
 addColumn schema table col ty = Migration

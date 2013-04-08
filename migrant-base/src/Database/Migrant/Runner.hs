@@ -48,11 +48,11 @@ testMaybeCondition ifAbsent ifPresent cond next = case cond of
     msg ifPresent
     conn <- migrateSettingsBackend <$> ask
     pass <- lift $ backendTestCondition conn cond
-    if pass
-      then next
-      else do
+    case pass of
+      Nothing -> next
+      Just err -> do
         lift $ backendRollbackTransaction conn
-        return $ Just "condition failed"
+        return $ Just err
 
 testPrecondition :: Backend conn => Maybe (BackendCond conn) -> Runner conn (Maybe String) -> Runner conn (Maybe String)
 testPrecondition  = testMaybeCondition MessageWarnNoPrecondition  MessageTestingPrecondition

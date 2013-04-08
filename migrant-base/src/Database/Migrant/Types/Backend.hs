@@ -21,7 +21,7 @@ class (Show (BackendQuery conn), Eq (BackendQuery conn), Eq (BackendCond conn), 
   backendRunMigration        :: conn -> BackendQuery conn -> BackendMonad conn (Maybe String)
   backendPushMigration       :: conn -> Migration (BackendQuery conn) (Maybe (BackendQuery conn)) (BackendCond conn) -> BackendMonad conn ()
   backendPopMigration        :: conn -> BackendMonad conn ()
-  backendTestCondition       :: conn -> BackendCond conn -> BackendMonad conn Bool
+  backendTestCondition       :: conn -> BackendCond conn -> BackendMonad conn (Maybe String)
 
 type UpMigration conn = Migration (BackendQuery conn) (Maybe (BackendQuery conn)) (BackendCond conn)
 type BiMigration conn = Migration (BackendQuery conn) (BackendQuery conn) (BackendCond conn)
