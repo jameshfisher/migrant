@@ -38,9 +38,9 @@ frontendTerminal m = case m of
   MessageWarnNoDownMigration      -> putWarning  "    no down-migration provided"
   MessageTestingDownMigration     -> putStrLn    "    testing down-migration"
   MessageWarnNoPrecondition       -> putWarning  "    no precondition provided"
-  MessageTestingPrecondition      -> putStrLn    "    testing precondition"
+  MessageTestingPrecondition q    -> putStrLn $  "    testing precondition: " ++ q
   MessageWarnNoPostCondition      -> putWarning  "    no postcondition provided"
-  MessageTestingPostcondition     -> putStrLn    "    testing postcondition"
+  MessageTestingPostcondition q   -> putStrLn $  "    testing postcondition: " ++ q
   MessageMissingDownMigrations ms -> do
     putError "The following down-migrations are not provided:"
     mapM_ (putStrLn . indent) ms

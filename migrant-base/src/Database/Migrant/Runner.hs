@@ -36,7 +36,7 @@ ensureTableUI = do
 testMaybeCondition ::
   Backend conn =>
   Message ->
-  Message ->
+  (String -> Message) ->
   Maybe (BackendCond conn) ->
   Runner conn (Maybe String) ->
   Runner conn (Maybe String)
@@ -45,7 +45,7 @@ testMaybeCondition ifAbsent ifPresent cond next = case cond of
     msg ifAbsent
     next
   Just cond -> do
-    msg ifPresent
+    msg . ifPresent . show $ cond
     conn <- migrateSettingsBackend <$> ask
     pass <- lift $ backendTestCondition conn cond
     case pass of

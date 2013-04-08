@@ -13,9 +13,9 @@ data Message
   | MessageWarnNoDownMigration
   | MessageTestingDownMigration
   | MessageWarnNoPrecondition
-  | MessageTestingPrecondition
+  | MessageTestingPrecondition String
   | MessageWarnNoPostCondition
-  | MessageTestingPostcondition
+  | MessageTestingPostcondition String
   | MessageMissingDownMigrations [String]
   | MessageAborted
   | MessageCompleted Int
