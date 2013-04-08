@@ -33,6 +33,8 @@ frontendTerminal m = case m of
   MessageMigrationRolledBack err  -> do
     putError "    rolled back due to error:"
     putError $ indent err
+  MessageStartedUpQuery   q       -> putStrLn $  "    running up-query: " ++ q
+  MessageStartedDownQuery q       -> putStrLn $  "    running down-query: " ++ q
   MessageWarnNoDownMigration      -> putWarning  "    no down-migration provided"
   MessageTestingDownMigration     -> putStrLn    "    testing down-migration"
   MessageWarnNoPrecondition       -> putWarning  "    no precondition provided"

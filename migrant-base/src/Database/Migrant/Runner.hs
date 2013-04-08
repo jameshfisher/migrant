@@ -60,9 +60,10 @@ testPrecondition  = testMaybeCondition MessageWarnNoPrecondition  MessageTesting
 testPostcondition :: Backend conn => Maybe (BackendCond conn) -> Runner conn (Maybe String) -> Runner conn (Maybe String)
 testPostcondition = testMaybeCondition MessageWarnNoPostCondition MessageTestingPostcondition
 
-runMigration :: Backend conn => BackendQuery conn -> Runner conn (Maybe String) -> Runner conn (Maybe String)
-runMigration query next = do
+runMigration :: Backend conn => BackendQuery conn -> (String -> Message) -> Runner conn (Maybe String) -> Runner conn (Maybe String)
+runMigration query message next = do
   conn <- migrateSettingsBackend <$> ask
+  msg . message . show $ query
   err <- lift $ backendRunQuery conn query
   case err of
     Just err -> do
@@ -89,7 +90,7 @@ transact action = do
 downMigrateUI :: Backend conn => BiMigration conn -> Runner conn (Maybe String)
 downMigrateUI m = transact $
   testPostcondition (migrationPost m) $
-    runMigration (migrationDown m) $
+    runMigration (migrationDown m) MessageStartedDownQuery $
       testPrecondition (migrationPre m) $ do
         conn <- migrateSettingsBackend <$> ask
         lift $ backendPopMigration conn
@@ -98,7 +99,7 @@ downMigrateUI m = transact $
 upMigrateUI :: Backend conn => UpMigration conn -> Runner conn (Maybe String)
 upMigrateUI m = transact $
   testPrecondition (migrationPre m) $
-    runMigration (migrationUp m) $
+    runMigration (migrationUp m) MessageStartedUpQuery $
       testPostcondition (migrationPost m) $ do
 
         let
@@ -113,9 +114,9 @@ upMigrateUI m = transact $
             push
           Just down -> do
             msg MessageTestingDownMigration
-            runMigration down $
+            runMigration down MessageStartedDownQuery $
               testPrecondition (migrationPre m) $
-                runMigration (migrationUp m) $
+                runMigration (migrationUp m) MessageStartedUpQuery $
                   testPostcondition (migrationPost m) push
 
 -- TODO downMigrateListUI and upMigrateListUI are almost the same

@@ -6,6 +6,8 @@ data Message
   = MessageCreatedMigrationStack
   | MessageMigrationStartedUp String
   | MessageMigrationStartedDown String
+  | MessageStartedUpQuery String
+  | MessageStartedDownQuery String
   | MessageMigrationCommitted
   | MessageMigrationRolledBack String
   | MessageWarnNoDownMigration

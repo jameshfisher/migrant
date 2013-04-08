@@ -7,6 +7,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Exception
 import Data.ByteString.Char8
+import Data.String (IsString (..))
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Types
 import Database.PostgreSQL.Simple.FromRow
@@ -31,19 +32,30 @@ catchSqlError act = do
     Left e  -> Just . unpack . sqlErrorMsg $ e
     Right _ -> Nothing
 
-instance FromRow (Migration Query (Maybe Query) Query) where
+newtype PgQuery = PgQuery { fromPgQuery :: Query } deriving (Eq)
+
+instance Show PgQuery where
+  show (PgQuery (Query q)) = unpack q
+
+instance IsString PgQuery where
+  fromString = PgQuery . fromString
+
+pgQuery :: ByteString -> PgQuery
+pgQuery = PgQuery . Query
+
+instance FromRow (Migration PgQuery (Maybe PgQuery) PgQuery) where
   fromRow = do
     up <- field
     down <- field
     pre <- field
     post <- field
     description <- field
-    return $ Migration (Query up) (Query <$> down) (Query <$> pre) (Query <$> post) description
+    return $ Migration (pgQuery up) (pgQuery <$> down) (pgQuery <$> pre) (pgQuery <$> post) description
 
 instance Backend Connection where
   type BackendMonad Connection = IO
-  type BackendQuery Connection = Query
-  type BackendCond  Connection = Query
+  type BackendQuery Connection = PgQuery
+  type BackendCond  Connection = PgQuery
 
   backendEnsureStack conn = do
     [[createStack]] <- query_ conn
@@ -92,7 +104,7 @@ instance Backend Connection where
   backendRollbackTransaction = rollback
   backendCommitTransaction = catchSqlError . commit
 
-  backendRunQuery conn = catchSqlError . void . execute_ conn
+  backendRunQuery conn = catchSqlError . void . execute_ conn . fromPgQuery
 
   backendPushMigration conn mig = void $ execute conn
     [sql|
@@ -105,10 +117,10 @@ instance Backend Connection where
           end),
         (select max(id) from migrant.migration), ?, ?, ?, ?, ?)
     |] (
-      fromQuery $ migrationUp mig,
-      fromQuery <$> migrationDown mig,
-      fromQuery <$> migrationPre mig,
-      fromQuery <$> migrationPost mig,
+      fromQuery . fromPgQuery $ migrationUp mig,
+      fromQuery . fromPgQuery <$> migrationDown mig,
+      fromQuery . fromPgQuery <$> migrationPre mig,
+      fromQuery . fromPgQuery <$> migrationPost mig,
       migrationDescription mig)
 
   backendPopMigration conn = void $ execute_ conn
@@ -118,13 +130,13 @@ instance Backend Connection where
     |]
 
   backendTestCondition conn cond = do
-    [[pass]] <- query_ conn cond
-    return $ if pass then Nothing else Just $ "condition failed when running:\n\n" ++ unpack (fromQuery cond)
+    [[pass]] <- query_ conn (fromPgQuery cond)
+    return $ if pass then Nothing else Just $ "condition failed when running:\n\n" ++ unpack (fromQuery $ fromPgQuery cond)
 
-addColumn :: String -> String -> String -> String -> Migration Query (Maybe Query) Query
+addColumn :: String -> String -> String -> String -> Migration PgQuery (Maybe PgQuery) PgQuery
 addColumn schema table col ty = Migration
-  (Query . pack $ "alter table " ++ schema ++ "." ++ table ++ " add column " ++ col ++ " " ++ ty)
-  (Just . Query . pack $ "alter table " ++ schema ++ "." ++ table ++ " drop column " ++ col)
-  (Just . Query . pack $ "select count(*) = 0 from information_schema.columns where table_schema='" ++ schema ++ "' and table_name ='" ++ table ++ "' and column_name = '" ++ col ++ "'")
-  (Just . Query . pack $ "select count(*) = 1 from information_schema.columns where table_schema='" ++ schema ++ "' and table_name ='" ++ table ++ "' and column_name = '" ++ col ++ "'")
+  (pgQuery . pack $ "alter table " ++ schema ++ "." ++ table ++ " add column " ++ col ++ " " ++ ty)
+  (Just . pgQuery . pack $ "alter table " ++ schema ++ "." ++ table ++ " drop column " ++ col)
+  (Just . pgQuery . pack $ "select count(*) = 0 from information_schema.columns where table_schema='" ++ schema ++ "' and table_name ='" ++ table ++ "' and column_name = '" ++ col ++ "'")
+  (Just . pgQuery . pack $ "select count(*) = 1 from information_schema.columns where table_schema='" ++ schema ++ "' and table_name ='" ++ table ++ "' and column_name = '" ++ col ++ "'")
   (Just $ "add column " ++ schema ++ "." ++ table ++ "." ++ col)
