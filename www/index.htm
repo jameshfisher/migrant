@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" type="text/css" href="index2.css"/>
+  </head>
+  <body>
+    <header>
+      <hgroup>
+        <h1>Migrant</h1>
+        <h2>Database migration done right.</h2>
+      </hgroup>
+    </header>
+
+    <div class="content">
+      <div class="container">
+        <section class="jumbotron">
+          Does your program use a database?
+          Then you should be using database migrations.
+          <code>migrant</code> is a database migration tool.
+        </section>
+
+        <div id="info_blocks">
+          <section>
+            <div>
+              <h2>Get it</h2>
+
+              <code>
+                cabal install migrant
+              </code>
+            </div>
+          </section>
+
+          <section>
+            <div>
+              <h2>Contribute</h2>
+
+              <a href="#">Fork it on GitHub.</a>
+            </div>
+          </section>
+
+          <div class="clearfix"></div>
+        </div>
+
+        <section id="body_text">
+          <section>
+            <h2>What is it for?</h2>
+
+            <p>
+              If you have written an application that uses a database,
+              you have likely run into some of the following problems:
+
+              <ul>
+                <li>
+                  You deployed the latest version of your application,
+                  but forgot to update the database.
+                </li>
+
+                <li>
+                  You can see what version of the application is running,
+                  but what about the database?
+                </li>
+
+                <li>
+                  You made your changes to your development database;
+                  now you need to do the same to the production database.
+                  What changes did you make?
+                </li>
+
+                <li>
+                  You switched from your feature branch
+                  to a different branch;
+                  now you need to reverse your database changes
+                  and apply the other branch's changes.
+                </li>
+              </ul>
+            </p>
+          </section>
+
+          <section>
+            <h2>How does it work?</h2>
+
+            <p>
+              <code>migrant</code> works with two things:
+              the current state of the database,
+              and the state that you want to migrate to.
+
+              Both states are represented as a list of <q>migrations</q>.
+
+              A migration is a database change &mdash;
+              creating a table, changing a column name, adding an index, and so forth.
+            <p>
+
+            <p>
+              The current state of the database is stored in the database by <code>migrant</code>.
+
+              The new state of the database is maintained by you as files under version control.
+
+              <code>migrant</code>'s job is to get from the current state to the new state.
+            </p>
+
+            <p>
+              In the simple case,
+              your new state will have one or two new migrations
+              compared to the old state.
+
+              <code>migrant</code> will then run each of those new migrations,
+              migrating <q>up</q> to new state in the database.
+
+              It will accordingly update the list of migrations in the database.
+            </p>
+
+            <p>
+              Often, however, the new state will contain less migrations.
+
+              This is common: you might have decided to revert a migration,
+              or you might have switched from your feature branch to the master branch.
+
+              In this case, <code>migrant</code> tries to migrate <q>down</q>.
+
+              To do this,
+              each migration you write should contain not only how to migrate up,
+              but also how to reverse that migration.
+            </p>
+
+            <p>
+              In the general case,
+              the current database state and the new database state
+              may have diverged.
+
+              <code>migrant</code> does this like so:
+
+              <ol>
+                <li>
+                  Find the common ancestor of both states.
+                </li>
+
+                <li>
+                  Migrate down to that common ancestor.
+                </li>
+
+                <li>
+                  Migrate up to the new database state.
+                </li>
+              </ol>
+            </p>
+          </section>
+        </section>
+      </div>
+    </div>
+
+    <footer>
+      Header image is
+      <a href="http://www.ebay.co.uk/itm/1871-Wood-Engraving-Travel-Camp-Mowaish-Window-Hill-Mountain-Indigenous-People-/310638599182">
+        <q>Start from the Camp at Mowaish or Window Hill</q>
+      </a>,
+      an 1871 wood engraving by an unknown artist.
+
+      It depicts the nomadic life of the
+      <a href="https://en.wikipedia.org/wiki/Tehuelche_people" target="_blank">Tehuelche people</a>.
+    </footer>
+  </body>
+</html>
