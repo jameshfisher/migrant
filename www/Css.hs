@@ -1,64 +1,66 @@
 {-# LANGUAGE OverloadedStrings, QuasiQuotes #-}
 module Main (main) where
 
+import Prelude hiding (div, (**))
 import Clay
   ( renderWith
   , (?)
   , margin
   , (-:)
   )
-import Data.Monoid (mappend)
-import Clay.Render (Config (Config))
-import Clay.Elements (body, code, header)
-import Clay.Geometry (height, paddingTop)
-import Clay.Size (px, em)
-import Clay.Font (fontFamily, fontSize, fontColor)
-import Clay.Text (textAlign, alignSide)
-import Clay.Color (rgba, hsl)
 import Clay.Background (background, url, backgroundColor, placed, sideCenter, sideBottom, repeatX)
-import Text.Here (here)
+import Clay.Border (borderStyle, solid, borderColor, borderWidth)
+import Clay.Color (rgba, hsl, transparent)
+import Clay.Common (auto)
+import Clay.Display (display, block, inlineBlock, table, float, floatLeft, floatRight, clear, both)
+import Clay.Elements (body, code, header, footer, h1, h2, h3, h4, h5, h6, div, q, ul, li, section)
+import Clay.Font (fontFamily, fontSize, fontColor, fontStyle, italic, serif)
+import Clay.FontFace (fontFaceSrc, FontFaceSrc (FontFaceSrcUrl))
+import Clay.Geometry (height, width, maxWidth, padding, paddingTop, marginTop)
+import Clay.Pseudo (before, after, firstChild, nthChild)
+import Clay.Render (pretty)
+import Clay.Selector ((#), (**), (|>), star, with, byClass)
+import Clay.Size (px, em, pct, sym2)
+import Clay.Stylesheet (fontFace, (&), (<?))
+import Clay.Text (textAlign, alignSide, textTransform, uppercase, content, stringContent, letterSpacing)
+import Clay.Transform (transform, scaleX)
+import Data.Monoid (mappend, (<>))
 import qualified Data.Text.Lazy as Text (Text)
-import qualified Data.Text.Lazy.IO as TextIO (putStr)
+import qualified Data.Text.Lazy.IO as TextIO (writeFile)
 
-
-fontFaces :: Text.Text
-fontFaces = [here|
-@font-face {
-  font-family "IM Fell Great Primer";
-  src url("fonts/IM_Fell_Great_Primer/IMFeGPrm28P.ttf");
-}
-
-@font-face {
-  font-family "IM Fell Great Primer";
-  font-style italic;
-  src url("fonts/IM_Fell_Great_Primer/IMFeGPit28P.ttf");
-}
-|]
 
 main :: IO ()
-main = TextIO.putStr $ fontFaces `mappend` css
+main = TextIO.writeFile "index.css" $ css
 
-
-run = renderWith (Config "" "" "" False False False) []
+run = renderWith pretty []
 
 css = run $ do
+
+  fontFace $ do
+    fontFamily   ["IM Fell Great Primer"] []
+    fontFaceSrc  [FontFaceSrcUrl "fonts/IM_Fell_Great_Primer/IMFeGPrm28P.ttf" Nothing]
+
+  fontFace $ do
+    fontFamily   ["IM Fell Great Primer"] []
+    fontStyle    italic
+    fontFaceSrc  [FontFaceSrcUrl "fonts/IM_Fell_Great_Primer/IMFeGPit28P.ttf" Nothing]
+
   body ? do
-    margin 0 0 0 0
+    margin       0 0 0 0
+    fontFamily   ["IM Fell Great Primer"] [serif]
+    fontSize $   px 21
+    fontColor $  rgba 0 0 0 231
 
-    fontFamily ["IM Fell Great Primer"] ["serif"]
-    fontSize $ px 21
-    fontColor $ rgba 0 0 0 231
-
-    background [url "images/paper.png", url "images/water_stain.png"]
-    "background-color" -: "hsl(30, 70%, 98%)"
+    background   [url "images/paper.png", url "images/water_stain.png"]
+    "background-color" -: "hsl(30, 70%, 98%)" -- TODO fix Clay
 
   code ? do
-    fontSize $ em 0.8
+    fontSize $  em 0.8
 
   header ? do
-    textAlign $ alignSide sideCenter
+    textAlign $   alignSide sideCenter
 
-    paddingTop (px 100)
+    paddingTop $  px 100
 
     background
       (  url "images/travel_without_sky-nq8.png"
@@ -68,122 +70,92 @@ css = run $ do
 
     height $ px 800
 
-    fontColor $ hsl 0 200 50
     "color" -: "hsl(0, 70%, 40%)"
 
-  -- .content:before, footer:before
-  --  display block
-  --  content ""
-  --  height 5px
-  --  background-image url("images/horizontal.png")
-  --  width 100%
+  (".content" <> footer) # before ? do
+    display     block
+    content $   stringContent ""
+    height $    px 5
+    background  [url "images/horizontal.png"]
+    width $     pct 100
 
+  h1 <> h2 <> h3 <> h4 <> h5 <> h6 ? ("font-weight" -: "normal")
 
-    -- h1, h2, h3, h4, h5, h6  font-weight normal
+  header ? do
+    h1 ? do
+      background       [url "images/decor-nq8.png"]
+      width $          px 387
+      height $         px 103
+      paddingTop $     px 76
+      sym2 margin      0 auto
+      textTransform    uppercase
+      fontSize $       px 37
+      letterSpacing $  px 2
+    h2 ? do
+      fontStyle        italic
 
-    -- header h1
-    --   background-image url("images/decor-nq8.png")
-    --   width 387px
-    --   height 103px
-    --   padding-top 76px
+  (div # ".content") ** h2 ? do
+    textAlign $    alignSide sideCenter
+    sym2 padding   (em 1.5) 0
+    margin         0 0 0 0
+    textTransform  uppercase
+    fontSize $     em 1.4
+    "color" -: "hsl(0, 70%, 40%)" -- TODO fix Clay
 
-    --   margin 0 auto
+    let
+      leaf = do
+        content $    stringContent ""
+        background   [url "images/leaf.png"]
+        width $      px 39
+        height $     px 24
+        display      inlineBlock
+        sym2 margin  0 (px 20)
 
-    --   text-transform uppercase
-    --   font-size 37px
-    --   letter-spacing 2px
-    --
+    before & leaf
 
-    -- header h2
-    --   font-style italic
-    --
+    after & do
+      leaf
+      transform $ scaleX (-1)
 
-    -- div.content h2
-    --   text-align center
-    --   padding 1.5em 0
-    --   margin 0
-    --   text-transform uppercase
-    --   font-size 1.4em
-    --   color hsl(0, 70%, 40%)
-    --
+  ".container" ? do
+    maxWidth $   px 960
+    sym2 margin  0 auto
 
-    -- div.content h2:before, div.content h2:after
-    --   content ""
+  ".jumbotron" ? do
+    fontSize $   em 1.8
+    marginTop $  em 1
 
-    --   background-image url("images/leaf.png")
-    --   width 39px
-    --   height 24px
+  q ? do
+    before & (content $ stringContent "‘")
+    after  & (content $ stringContent "’")
 
-    --   display inline-block
+  footer ? (fontStyle italic)
 
-    --   margin 0 20px
-    --
+  ul |> li ? do
+    "list-style-image" -: "url(\"images/oak.png\")" -- TODO add to Clay
+    marginTop $ em 1
 
-    -- div.content h2:after
-    --   -moz-transform scaleX(-1)
-    --   -o-transform scaleX(-1)
-    --   -webkit-transform scaleX(-1)
-    --   transform scaleX(-1)
-    --   filter FlipH
-    --   -ms-filter "FlipH"
-    --
+  "#wrapper" ? (display table)
 
-    -- .container
-    --   max-width 960px
-    --   margin 0 auto
-    --
+  "#info_blocks" ? do
+    margin (em 2) 0 (em 2) 0 -- TODO fix Clay
 
-    -- .jumbotron
-    --   font-size 1.8em
-    --   margin-top 1em
-    --
+    section ? do
+      textAlign $        alignSide sideCenter
+      borderStyle        solid
+      borderColor        transparent
+      "border-width" -:  "40px 70px" -- TODO fix Clay
+      "border-image" -:  "url(\"images/border_small.png\") 40 70 repeat" -- TODO add to Clay
+      margin             (px (-10)) (px (-20)) (px (-15)) (px (-27))
+      "text-shadow" -:   "2px 2px 1px white, 2px -2px 1px white, -2px 2px 1px white, -2px -2px 1px white" -- TODO fix Clay
 
-    -- q:before  content "‘"
-    -- q:after  content "’"
+      div <? do
+        background  [url"images/shade.png"]
+        margin      (px (-15)) (px (-35)) (px (-10)) (px (-28))
+        padding     (em 1) 0 (em 2) 0
+        width $     px 400
 
-    -- footer
-    --   font-style italic
-    --
+      firstChild   & float floatLeft
+      nthChild "2" & float floatRight
 
-    -- ul li
-    --   list-style-image url("images/oak.png")
-    --   margin-top 1em
-    --
-
-    -- #wrapper  display table
-    -- #info_blocks
-    --   margin 2em 0
-    --
-
-    -- #info_blocks section
-    --   text-align center
-
-    --   border solid transparent
-    --   border-width 40px 70px
-    --   border-image url("images/border_small.png") 40 70 repeat
-
-    --   margin -10px -20px -15px -27px
-
-    --   text-shadow 2px 2px 1px white, 2px -2px 1px white, -2px 2px 1px white, -2px -2px 1px white
-    --
-
-    -- #info_blocks section > div
-    --   background-image url("images/shade.png")
-    --   margin -15px -35px -10px -28px
-    --   padding 1em 0 2em 0
-    --   width 400px
-    --
-
-    -- #info_blocks section:first-child
-    --   float left
-    --
-
-    -- #info_blocks section:nth-child(2)
-    --   float right
-    --
-
-
-    -- section#body_text section
-    --
-
-    -- .clearfix  clear both
+  ".clearfix" ? (clear both)

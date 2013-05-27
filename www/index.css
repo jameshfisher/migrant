@@ -1,156 +1,191 @@
-@font-face {
-  font-family: "IM Fell Great Primer";
-  src: url("fonts/IM_Fell_Great_Primer/IMFeGPrm28P.ttf");
+
+body
+{
+  margin           : 0px 0px 0px 0px;
+  font-family      : "IM Fell Great Primer", serif;
+  font-size        : 21px;
+  color            : rgba(0,0,0,0.9023);
+  background       : url("images/paper.png"),url("images/water_stain.png");
+  background-color : hsl(30, 70%, 98%);
 }
 
-@font-face {
-  font-family: "IM Fell Great Primer";
-  font-style: italic;
-  src: url("fonts/IM_Fell_Great_Primer/IMFeGPit28P.ttf");
+code
+{
+  font-size : 0.80000em;
 }
 
-html {
+header
+{
+  text-align  : center;
+  padding-top : 100px;
+  background  : url("images/travel_without_sky-nq8.png") bottom center repeat no-repeat;
+  height      : 800px;
+  color       : hsl(0, 70%, 40%);
 }
 
-body {
-  margin: 0;
-
-  font-family: "IM Fell Great Primer", serif;
-  font-size: 21px;
-  color: rgba(0,0,0,0.9);
-
-  background-image: url("images/paper.png"), url("images/water_stain.png");
-  background-color: hsl(30, 71%, 98%);
+.content:before,
+footer:before
+{
+  display    : block;
+  content    : "";
+  height     : 5px;
+  background : url("images/horizontal.png");
+  width      : 100.00000%;
 }
 
-code { font-size: 0.8em;}
-
-header {
-  text-align: center;
-
-  padding-top: 100px;
-
-  background-image: url("images/travel_without_sky-nq8.png");
-  background-position: bottom center;
-  background-repeat: repeat-x;
-  height: 800px;
-
-  color: hsl(0, 70%, 40%);
-}
-
-.content:before, footer:before {
-  display: block;
-  content: "";
-  height: 5px;
-  background-image: url("images/horizontal.png");
-  width: 100%;
-}
-
-h1, h2, h3, h4, h5, h6 { font-weight: normal; }
-
-header h1 {
-  background-image: url("images/decor-nq8.png");
-  width: 387px;
-  height: 103px;
-  padding-top: 76px;
-
-  margin: 0 auto;
-
-  text-transform: uppercase;
-  font-size: 37px;
-  letter-spacing: 2px;
-}
-
-header h2 {
-  font-style: italic;
-}
-
-div.content h2 {
-  text-align: center;
-  padding: 1.5em 0;
-  margin: 0;
-  text-transform: uppercase;
-  font-size: 1.4em;
-  color: hsl(0, 70%, 40%);
-}
-
-div.content h2:before, div.content h2:after {
-  content: "";
-
-  background-image: url("images/leaf.png");
-  width: 39px;
-  height: 24px;
-
-  display: inline-block;
-
-  margin: 0 20px;
-}
-
-div.content h2:after {
-  -moz-transform: scaleX(-1);
-  -o-transform: scaleX(-1);
-  -webkit-transform: scaleX(-1);
-  transform: scaleX(-1);
-  filter: FlipH;
-  -ms-filter: "FlipH";
-}
-
-.container {
-  max-width: 960px;
-  margin: 0 auto;
-}
-
-.jumbotron {
-  font-size: 1.8em;
-  margin-top: 1em;
-}
-
-q:before { content: "‘"; }
-q:after { content: "’"; }
-
-footer {
-  font-style: italic;
-}
-
-ul li {
-  list-style-image: url("images/oak.png");
-  margin-top: 1em;
-}
-
-#wrapper { display: table;}
-#info_blocks {
-  margin: 2em 0;
-}
-
-#info_blocks section {
-  text-align: center;
-
-  border: solid transparent;
-  border-width: 40px 70px;
-  border-image: url("images/border_small.png") 40 70 repeat;
-
-  margin: -10px -20px -15px -27px;
-
-  text-shadow: 2px 2px 1px white, 2px -2px 1px white, -2px 2px 1px white, -2px -2px 1px white;
-}
-
-#info_blocks section > div {
-  background-image: url("images/shade.png");
-  margin: -15px -35px -10px -28px;
-  padding: 1em 0 2em 0;
-  width: 400px;
-}
-
-#info_blocks section:first-child {
-  float: left;
-}
-
-#info_blocks section:nth-child(2) {
-  float: right;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6
+{
+  font-weight : normal;
 }
 
 
-section#body_text section {
+header h1
+{
+  background     : url("images/decor-nq8.png");
+  width          : 387px;
+  height         : 103px;
+  padding-top    : 76px;
+  margin         : 0px auto 0px auto;
+  text-transform : uppercase;
+  font-size      : 37px;
+  letter-spacing : 2px;
 }
 
-.clearfix { clear: both;}
+header h2
+{
+  font-style : italic;
+}
+
+div.content h2
+{
+  text-align     : center;
+  padding        : 1.50000em 0px 1.50000em 0px;
+  margin         : 0px 0px 0px 0px;
+  text-transform : uppercase;
+  font-size      : 1.40000em;
+  color          : hsl(0, 70%, 40%);
+}
+
+div.content h2:before
+{
+  content    : "";
+  background : url("images/leaf.png");
+  width      : 39px;
+  height     : 24px;
+  display    : inline-block;
+  margin     : 0px 20px 0px 20px;
+}
+
+div.content h2:after
+{
+  content           : "";
+  background        : url("images/leaf.png");
+  width             : 39px;
+  height            : 24px;
+  display           : inline-block;
+  margin            : 0px 20px 0px 20px;
+  -webkit-transform : scaleX(-1.00000);
+  -moz-transform    : scaleX(-1.00000);
+  -ms-transform     : scaleX(-1.00000);
+  -o-transform      : scaleX(-1.00000);
+  transform         : scaleX(-1.00000);
+}
+
+.container
+{
+  max-width : 960px;
+  margin    : 0px auto 0px auto;
+}
+
+.jumbotron
+{
+  font-size  : 1.80000em;
+  margin-top : 1.00000em;
+}
+
+
+q:before
+{
+  content : "‘";
+}
+
+q:after
+{
+  content : "’";
+}
+
+footer
+{
+  font-style : italic;
+}
+
+ul > li
+{
+  list-style-image : url("images/oak.png");
+  margin-top       : 1.00000em;
+}
+
+#wrapper
+{
+  display : table;
+}
+
+#info_blocks
+{
+  margin : 2.00000em 0px 2.00000em 0px;
+}
+
+#info_blocks section
+{
+  text-align   : center;
+  border-style : solid;
+  border-color : rgba(0,0,0,0.0000);
+  border-width : 40px 70px;
+  border-image : url("images/border_small.png") 40 70 repeat;
+  margin       : -10px -20px -15px -27px;
+  text-shadow  : 2px 2px 1px white, 2px -2px 1px white, -2px 2px 1px white, -2px -2px 1px white;
+}
+
+#info_blocks section > div
+{
+  background : url("images/shade.png");
+  margin     : -15px -35px -10px -28px;
+  padding    : 1.00000em 0px 2.00000em 0px;
+  width      : 400px;
+}
+
+#info_blocks section:first-child
+{
+  float : left;
+}
+
+#info_blocks section:nth-child(2)
+{
+  float : right;
+}
+
+.clearfix
+{
+  clear : both;
+}
+
+@font-face
+{
+  font-family : "IM Fell Great Primer";
+  src         : url("fonts/IM_Fell_Great_Primer/IMFeGPrm28P.ttf");
+}
+
+@font-face
+{
+  font-family : "IM Fell Great Primer";
+  font-style  : italic;
+  src         : url("fonts/IM_Fell_Great_Primer/IMFeGPit28P.ttf");
+}
+
+
+/* Generated with Clay, http://fvisser.nl/clay */
