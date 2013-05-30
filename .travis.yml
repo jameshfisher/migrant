@@ -1,2 +1,2 @@
 language: haskell
-
+before_install: cd packages/migrant-base
